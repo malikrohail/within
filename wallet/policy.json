@@ -1,0 +1,13 @@
+{
+  "perTxCapDrops": "100000",
+  "dailyBudgetDrops": "100000000",
+  "allowedMerchants": [],
+  "allowedNetworks": [
+    "xrpl:1"
+  ],
+  "allowedAssets": [
+    "XRP"
+  ],
+  "holdTimeoutSeconds": 90,
+  "credentialType": "x402-merchant"
+}
