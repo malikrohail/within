@@ -1,0 +1,10 @@
+{
+  "good": {
+    "address": "rwKL4Bir4ED8jbMheyMGMnTWyeUcL3VpCa",
+    "port": 8001
+  },
+  "rogue": {
+    "address": "rPrD9LTXc5qLuP7ExwJX948ETzBUTQeQaq",
+    "port": 8002
+  }
+}

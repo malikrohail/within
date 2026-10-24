@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* Palette. */
+@theme {
+  --color-ink: #0f1419;
+  --color-panel: #161d24;
+  --color-line: #26313b;
+  --color-fg: #e6edf3;
+  --color-muted: #8b98a5;
+  --color-accent: #2bb3a3;
+  --color-ok: #2bb3a3;
+  --color-amber: #e8a33d;
+  --color-bad: #d9534f;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes flow-pulse {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@layer components {
+  .flow-pulse {
+    animation: flow-pulse 400ms linear infinite;
+  }
+  .fade-in {
+    animation: fade-in 300ms ease-out;
+  }
+  .panel {
+    @apply rounded-xl border border-line bg-panel p-5;
+  }
+  .panel-title {
+    @apply mb-4 text-sm font-semibold uppercase tracking-wider text-muted;
+  }
+}

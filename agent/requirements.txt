@@ -1,0 +1,9 @@
+fastapi==0.115.14
+uvicorn==0.30.6
+x402-xrpl==0.3.4
+xrpl-py==5.2.0
+requests==2.34.2
+python-dotenv==1.2.4
+pytest==9.1.1
+httpx==0.28.1
+anthropic==2.3.0
