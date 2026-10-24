@@ -1,0 +1,13 @@
+{
+  "maxAutoPrincipalDrops": "20000000",
+  "maxPrincipalDrops": "100000000",
+  "minScoreAuto": 70,
+  "minScore": 40,
+  "maxUtilizationPct": 80,
+  "minCoverRatioPct": 10,
+  "termSecondsMin": 120,
+  "termSecondsMax": 86400,
+  "interestRateBps": 800,
+  "holdTimeoutSeconds": 120,
+  "maxPendingDrops": "0"
+}
