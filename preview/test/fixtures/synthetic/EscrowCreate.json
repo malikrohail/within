@@ -1,0 +1,13 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "EscrowCreate",
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Destination": "rwKL4Bir4ED8jbMheyMGMnTWyeUcL3VpCa",
+    "Amount": "10000000",
+    "FinishAfter": 846200000,
+    "CancelAfter": 846290000,
+    "Fee": "12"
+  }
+}

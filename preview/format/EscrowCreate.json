@@ -1,0 +1,60 @@
+{
+  "type": "EscrowCreate",
+  "title": "Lock {Amount|amount} in escrow for {Destination|account}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "From",
+      "format": "account"
+    },
+    {
+      "path": "Destination",
+      "label": "To",
+      "format": "account",
+      "required": true
+    },
+    {
+      "path": "Amount",
+      "label": "Amount",
+      "format": "amount",
+      "required": true
+    },
+    {
+      "path": "FinishAfter",
+      "label": "Can release after",
+      "format": "ripple_time"
+    },
+    {
+      "path": "CancelAfter",
+      "label": "Can cancel after",
+      "format": "ripple_time"
+    },
+    {
+      "path": "Condition",
+      "label": "Condition",
+      "format": "hash"
+    },
+    {
+      "path": "DestinationTag",
+      "label": "Destination tag",
+      "format": "int"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "Condition",
+      "level": "warn",
+      "text": "Crypto-condition: whoever holds the fulfillment can release the funds."
+    },
+    {
+      "when": "!CancelAfter",
+      "level": "warn",
+      "text": "No CancelAfter: the funds cannot be reclaimed if the escrow is never finished."
+    }
+  ]
+}

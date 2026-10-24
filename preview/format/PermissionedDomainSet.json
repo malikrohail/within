@@ -1,0 +1,33 @@
+{
+  "type": "PermissionedDomainSet",
+  "title": "Define who may join a permissioned domain",
+  "variants": [
+    {
+      "when": "DomainID",
+      "title": "Change who may join domain {DomainID|hash}"
+    }
+  ],
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Domain owner",
+      "format": "account"
+    },
+    {
+      "path": "DomainID",
+      "label": "Domain",
+      "format": "hash"
+    },
+    {
+      "path": "AcceptedCredentials",
+      "label": "Members need one of",
+      "format": "accepted_credentials",
+      "required": true
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ]
+}

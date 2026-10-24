@@ -1,0 +1,24 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "SignerListSet",
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "SignerQuorum": 2,
+    "SignerEntries": [
+      {
+        "SignerEntry": {
+          "Account": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+          "SignerWeight": 1
+        }
+      },
+      {
+        "SignerEntry": {
+          "Account": "rwKL4Bir4ED8jbMheyMGMnTWyeUcL3VpCa",
+          "SignerWeight": 1
+        }
+      }
+    ],
+    "Fee": "12"
+  }
+}

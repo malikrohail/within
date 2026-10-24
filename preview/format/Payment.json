@@ -1,0 +1,86 @@
+{
+  "type": "Payment",
+  "title": "Pay {Amount|amount} to {Destination|account}",
+  "summary": "Send {Amount|amount} from {Account|account} to {Destination|account}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "From",
+      "format": "account"
+    },
+    {
+      "path": "Destination",
+      "label": "To",
+      "format": "account",
+      "required": true
+    },
+    {
+      "path": "Amount",
+      "label": "Amount",
+      "format": "amount",
+      "required": true
+    },
+    {
+      "path": "SendMax",
+      "label": "Spend at most",
+      "format": "amount"
+    },
+    {
+      "path": "DeliverMin",
+      "label": "Deliver at least",
+      "format": "amount"
+    },
+    {
+      "path": "Delegate",
+      "label": "Signed by delegate",
+      "format": "account"
+    },
+    {
+      "path": "DestinationTag",
+      "label": "Destination tag",
+      "format": "int"
+    },
+    {
+      "path": "SourceTag",
+      "label": "Source tag",
+      "format": "int"
+    },
+    {
+      "path": "InvoiceID",
+      "label": "Invoice ID",
+      "format": "hash"
+    },
+    {
+      "path": "Memos",
+      "label": "Memos",
+      "format": "memos"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    },
+    {
+      "path": "LastLedgerSequence",
+      "label": "Valid until ledger",
+      "format": "int"
+    }
+  ],
+  "risk": [
+    {
+      "when": "Paths",
+      "level": "warn",
+      "text": "Uses payment paths: the delivered currency may differ from what you send."
+    },
+    {
+      "when": "Flags & 0x00020000",
+      "level": "warn",
+      "text": "Partial payment: the recipient may receive less than Amount."
+    },
+    {
+      "when": "Delegate",
+      "level": "info",
+      "text": "Delegated payment: this account pays, but the delegate's key signs it (PermissionDelegation)."
+    }
+  ]
+}

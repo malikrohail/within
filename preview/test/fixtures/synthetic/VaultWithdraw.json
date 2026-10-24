@@ -1,0 +1,12 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "VaultWithdraw",
+    "Account": "rKecLpa298P3oLJox7zKb6sTfBa9aG2ZjL",
+    "VaultID": "78926F1319073BA8BB79EEF47F0C992BED95ED327C0161C651E896809A747F79",
+    "Amount": "5000000",
+    "Destination": "rwKL4Bir4ED8jbMheyMGMnTWyeUcL3VpCa",
+    "Fee": "1"
+  }
+}

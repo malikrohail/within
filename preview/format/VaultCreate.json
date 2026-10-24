@@ -1,0 +1,54 @@
+{
+  "type": "VaultCreate",
+  "title": "Create a vault holding {Asset|asset}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Owner",
+      "format": "account"
+    },
+    {
+      "path": "Asset",
+      "label": "Asset",
+      "format": "asset",
+      "required": true
+    },
+    {
+      "path": "AssetsMaximum",
+      "label": "Maximum assets",
+      "format": "vault_amount"
+    },
+    {
+      "path": "DomainID",
+      "label": "Permissioned domain",
+      "format": "hash"
+    },
+    {
+      "path": "WithdrawalPolicy",
+      "label": "Withdrawal policy",
+      "format": "int"
+    },
+    {
+      "path": "Data",
+      "label": "Data",
+      "format": "hex_text"
+    },
+    {
+      "path": "MPTokenMetadata",
+      "label": "Share metadata",
+      "format": "hex_text"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "Flags & 0x00010000",
+      "level": "info",
+      "text": "Private vault: only accounts in the permissioned domain can deposit."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "AccountSet",
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Domain": "6578616D706C652E636F6D",
+    "Fee": "12"
+  }
+}

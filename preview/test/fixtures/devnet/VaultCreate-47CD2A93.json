@@ -1,0 +1,26 @@
+{
+  "_source": {
+    "network": "devnet",
+    "hash": "47CD2A93C99818E38B359C7F4F9410E53D6C713FF8B748872AB4ECAD91DBA8C2",
+    "validated": true,
+    "ledger_index": 6378716,
+    "result": "tesSUCCESS"
+  },
+  "tx_json": {
+    "Account": "rEH59tesggzmgg42PeHvByQQ3kmUNhegVw",
+    "Asset": {
+      "currency": "XRP"
+    },
+    "Fee": "200000",
+    "LastLedgerSequence": 6378734,
+    "RedemptionDate": 846190138,
+    "Sequence": 6373334,
+    "SigningPubKey": "ED7898B9541BF8D21083FE76D4592FFBB2FD807BD0603E76765478F5EDF1B7DF44",
+    "SubscriptionDate": 846161458,
+    "TransactionType": "VaultCreate",
+    "TxnSignature": "DCEB38224DD68CC8F9D6AB9D300CFE4B8EFBBD2BDE5C82C158F19B1CA0F1704D412042FD57D762767A2EE522B6D23F47F06B31A4D2392D0A2DF680CE2CA3D403",
+    "VaultKind": 1,
+    "status": "success",
+    "hash": "47CD2A93C99818E38B359C7F4F9410E53D6C713FF8B748872AB4ECAD91DBA8C2"
+  }
+}

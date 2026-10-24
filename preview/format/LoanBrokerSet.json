@@ -1,0 +1,65 @@
+{
+  "type": "LoanBrokerSet",
+  "title": "Set up a loan broker on vault {VaultID|hash}",
+  "variants": [
+    {
+      "when": "LoanBrokerID",
+      "title": "Update loan broker {LoanBrokerID|hash}"
+    }
+  ],
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Broker owner",
+      "format": "account"
+    },
+    {
+      "path": "VaultID",
+      "label": "Vault",
+      "format": "hash",
+      "required": true
+    },
+    {
+      "path": "LoanBrokerID",
+      "label": "Loan broker",
+      "format": "hash"
+    },
+    {
+      "path": "ManagementFeeRate",
+      "label": "Management fee",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "DebtMaximum",
+      "label": "Debt limit",
+      "format": "vault_amount"
+    },
+    {
+      "path": "CoverRateMinimum",
+      "label": "Minimum first-loss cover",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "CoverRateLiquidation",
+      "label": "Cover taken on default",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "Data",
+      "label": "Data",
+      "format": "hex_text"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "DebtMaximum == \"0\"",
+      "level": "info",
+      "text": "Debt limit 0 means no limit."
+    }
+  ]
+}

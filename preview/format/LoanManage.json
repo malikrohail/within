@@ -1,0 +1,58 @@
+{
+  "type": "LoanManage",
+  "title": "Change the state of loan {LoanID|hash}",
+  "variants": [
+    {
+      "when": "Flags & 0x00010000",
+      "title": "Default loan {LoanID|hash}: seize the cover"
+    },
+    {
+      "when": "Flags & 0x00020000",
+      "title": "Mark loan {LoanID|hash} as impaired"
+    },
+    {
+      "when": "Flags & 0x00040000",
+      "title": "Clear the impairment on loan {LoanID|hash}"
+    }
+  ],
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Signed by",
+      "format": "account"
+    },
+    {
+      "path": "LoanID",
+      "label": "Loan",
+      "format": "hash",
+      "required": true
+    },
+    {
+      "path": "Flags",
+      "label": "Flags",
+      "format": "flags"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "Flags & 0x00010000",
+      "level": "danger",
+      "text": "Default: the loan is written off and first-loss cover is taken to repay the vault. Not reversible."
+    },
+    {
+      "when": "Flags & 0x00020000",
+      "level": "warn",
+      "text": "Impair: the loan is marked as at risk and the vault's value is written down."
+    },
+    {
+      "when": "Flags & 0x00040000",
+      "level": "info",
+      "text": "Unimpair: the loan returns to good standing."
+    }
+  ]
+}

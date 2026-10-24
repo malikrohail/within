@@ -1,0 +1,21 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "Batch",
+    "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+    "Flags": 0,
+    "RawTransactions": [
+      {
+        "RawTransaction": {
+          "TransactionType": "Payment",
+          "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+          "Destination": "rwKL4Bir4ED8jbMheyMGMnTWyeUcL3VpCa",
+          "Amount": "1",
+          "Fee": "0"
+        }
+      }
+    ],
+    "Fee": "4"
+  }
+}

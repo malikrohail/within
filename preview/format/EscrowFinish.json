@@ -1,0 +1,33 @@
+{
+  "type": "EscrowFinish",
+  "title": "Release escrow {OfferSequence} of {Owner|account}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Signed by",
+      "format": "account"
+    },
+    {
+      "path": "Owner",
+      "label": "Escrow owner",
+      "format": "account",
+      "required": true
+    },
+    {
+      "path": "OfferSequence",
+      "label": "Escrow sequence",
+      "format": "int",
+      "required": true
+    },
+    {
+      "path": "Fulfillment",
+      "label": "Fulfillment",
+      "format": "hash"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ]
+}

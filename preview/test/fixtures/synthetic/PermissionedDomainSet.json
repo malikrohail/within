@@ -1,0 +1,17 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "PermissionedDomainSet",
+    "Account": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+    "AcceptedCredentials": [
+      {
+        "Credential": {
+          "Issuer": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+          "CredentialType": "783430322D6D65726368616E74"
+        }
+      }
+    ],
+    "Fee": "12"
+  }
+}

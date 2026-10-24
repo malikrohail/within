@@ -1,0 +1,40 @@
+{
+  "type": "SignerListSet",
+  "title": "Replace the signer list of {Account|account} (quorum {SignerQuorum})",
+  "variants": [
+    {
+      "when": "SignerQuorum == 0",
+      "title": "Delete the signer list of {Account|account}"
+    }
+  ],
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Account",
+      "format": "account"
+    },
+    {
+      "path": "SignerQuorum",
+      "label": "Quorum",
+      "format": "int",
+      "required": true
+    },
+    {
+      "path": "SignerEntries",
+      "label": "Signers",
+      "format": "signer_entries"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "TransactionType",
+      "level": "danger",
+      "text": "Changes who controls this account: these signers, at this quorum, can sign for it."
+    }
+  ]
+}

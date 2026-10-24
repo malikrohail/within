@@ -1,0 +1,28 @@
+{
+  "type": "VaultDeposit",
+  "title": "Deposit {Amount|amount} into vault {VaultID|hash}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Depositor",
+      "format": "account"
+    },
+    {
+      "path": "VaultID",
+      "label": "Vault",
+      "format": "hash",
+      "required": true
+    },
+    {
+      "path": "Amount",
+      "label": "Amount",
+      "format": "amount",
+      "required": true
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ]
+}

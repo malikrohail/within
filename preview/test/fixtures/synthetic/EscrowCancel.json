@@ -1,0 +1,11 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "EscrowCancel",
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Owner": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "OfferSequence": 7,
+    "Fee": "12"
+  }
+}

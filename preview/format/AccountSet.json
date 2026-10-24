@@ -1,0 +1,63 @@
+{
+  "type": "AccountSet",
+  "title": "Change the settings of {Account|account}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Account",
+      "format": "account"
+    },
+    {
+      "path": "SetFlag",
+      "label": "Turn on",
+      "format": "asf_flag"
+    },
+    {
+      "path": "ClearFlag",
+      "label": "Turn off",
+      "format": "asf_flag"
+    },
+    {
+      "path": "Domain",
+      "label": "Domain",
+      "format": "hex_text"
+    },
+    {
+      "path": "TransferRate",
+      "label": "Transfer rate",
+      "format": "int"
+    },
+    {
+      "path": "NFTokenMinter",
+      "label": "NFT minter",
+      "format": "account"
+    },
+    {
+      "path": "EmailHash",
+      "label": "Email hash",
+      "format": "hash"
+    },
+    {
+      "path": "MessageKey",
+      "label": "Message key",
+      "format": "hash"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "SetFlag == 4",
+      "level": "danger",
+      "text": "Disables the master key: only the regular key or the signer list can sign for this account afterwards."
+    },
+    {
+      "when": "TransactionType",
+      "level": "danger",
+      "text": "Account settings change how this account can be controlled and used. Check every setting before signing."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "LoanSet",
+    "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+    "Counterparty": "rsQ9F4CpzmFrYdmpbi4kGBKE7CV1xnHgGH",
+    "LoanBrokerID": "14972A74825371AE061CA20D21F2478996DE007EF54033F0326BEF0926B2D975",
+    "PrincipalRequested": "60000000",
+    "PaymentTotal": 3,
+    "PaymentInterval": 2592000,
+    "InterestRate": 50000,
+    "Flags": 65536,
+    "Fee": "30"
+  }
+}

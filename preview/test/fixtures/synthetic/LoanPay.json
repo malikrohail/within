@@ -1,0 +1,11 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "LoanPay",
+    "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+    "LoanID": "6930D229D16AA057B99E9F013943AA386B66FF8780811D1223490563107A24B2",
+    "Amount": "20100000",
+    "Fee": "1"
+  }
+}

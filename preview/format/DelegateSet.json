@@ -1,0 +1,47 @@
+{
+  "type": "DelegateSet",
+  "title": "Let {Authorize|account} sign {Permissions|permissions} for {Account|account}",
+  "summary": "{Account|account} lets {Authorize|account} sign {Permissions|permissions} transactions on its behalf",
+  "variants": [
+    {
+      "when": "!Permissions",
+      "title": "Revoke every permission delegated to {Authorize|account}",
+      "summary": "{Account|account} removes every permission it delegated to {Authorize|account}"
+    }
+  ],
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Account (delegator)",
+      "format": "account"
+    },
+    {
+      "path": "Authorize",
+      "label": "Delegate",
+      "format": "account",
+      "required": true
+    },
+    {
+      "path": "Permissions",
+      "label": "Permissions",
+      "format": "permissions"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "len(Permissions) > 0",
+      "level": "warn",
+      "text": "The delegate can send these transaction types from this account with its own key, without this device."
+    },
+    {
+      "when": "!Permissions",
+      "level": "warn",
+      "text": "Revokes every permission: the delegate can no longer sign anything for this account."
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "type": "LoanSet",
+  "title": "Loan of {PrincipalRequested|vault_amount} between {Account|account} and {Counterparty|account}",
+  "summary": "Loan of {PrincipalRequested|vault_amount}: {PaymentTotal} payments every {PaymentInterval|seconds} at {InterestRate|tenth_bps} interest",
+  "fields": [
+    {
+      "path": "LoanBrokerID",
+      "label": "Loan broker",
+      "format": "hash",
+      "required": true
+    },
+    {
+      "path": "Account",
+      "label": "Submitted by",
+      "format": "account"
+    },
+    {
+      "path": "Counterparty",
+      "label": "Counterparty",
+      "format": "account"
+    },
+    {
+      "path": "PrincipalRequested",
+      "label": "Principal",
+      "format": "vault_amount",
+      "required": true
+    },
+    {
+      "path": "PaymentTotal",
+      "label": "Payments",
+      "format": "int"
+    },
+    {
+      "path": "PaymentInterval",
+      "label": "Every",
+      "format": "seconds"
+    },
+    {
+      "path": "GracePeriod",
+      "label": "Grace period",
+      "format": "seconds"
+    },
+    {
+      "path": "InterestRate",
+      "label": "Interest rate",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "LateInterestRate",
+      "label": "Late interest rate",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "CloseInterestRate",
+      "label": "Early-close interest",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "OverpaymentInterestRate",
+      "label": "Overpayment interest",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "OverpaymentFee",
+      "label": "Overpayment fee",
+      "format": "tenth_bps"
+    },
+    {
+      "path": "LoanOriginationFee",
+      "label": "Origination fee",
+      "format": "vault_amount"
+    },
+    {
+      "path": "LoanServiceFee",
+      "label": "Service fee per payment",
+      "format": "vault_amount"
+    },
+    {
+      "path": "LatePaymentFee",
+      "label": "Late payment fee",
+      "format": "vault_amount"
+    },
+    {
+      "path": "ClosePaymentFee",
+      "label": "Early-close fee",
+      "format": "vault_amount"
+    },
+    {
+      "path": "TransactionType",
+      "label": "Signatures",
+      "format": "loan_signed_by"
+    },
+    {
+      "path": "Data",
+      "label": "Data",
+      "format": "hex_text"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "!CounterpartySignature",
+      "level": "warn",
+      "text": "The counterparty has not co-signed yet: the ledger rejects the loan until both parties sign."
+    },
+    {
+      "when": "Flags & 0x00010000",
+      "level": "info",
+      "text": "Overpayment allowed: the borrower may pay ahead of schedule."
+    }
+  ]
+}

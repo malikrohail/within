@@ -1,0 +1,20 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-built for unit tests: no real run of this shape exists in our evidence.",
+  "tx_json": {
+    "TransactionType": "Payment",
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Destination": "rwKL4Bir4ED8jbMheyMGMnTWyeUcL3VpCa",
+    "Amount": {
+      "currency": "USD",
+      "issuer": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+      "value": "12.5"
+    },
+    "SendMax": {
+      "currency": "USD",
+      "issuer": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+      "value": "12.6"
+    },
+    "Fee": "12"
+  }
+}

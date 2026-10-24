@@ -1,0 +1,25 @@
+{
+  "_source": {
+    "network": "devnet",
+    "hash": "1C47B8F1D7E1292C4708319EA2A79B00C2334EFC1FB86ADCC81B1FCB064AF0EA",
+    "validated": true,
+    "ledger_index": 6378718,
+    "result": "tesSUCCESS"
+  },
+  "tx_json": {
+    "Account": "rEH59tesggzmgg42PeHvByQQ3kmUNhegVw",
+    "CoverRateLiquidation": 10000,
+    "CoverRateMinimum": 10000,
+    "DebtMaximum": "0",
+    "Fee": "1",
+    "LastLedgerSequence": 6378737,
+    "ManagementFeeRate": 1000,
+    "Sequence": 6373335,
+    "SigningPubKey": "ED7898B9541BF8D21083FE76D4592FFBB2FD807BD0603E76765478F5EDF1B7DF44",
+    "TransactionType": "LoanBrokerSet",
+    "TxnSignature": "E61A21AFCDE835F9C180F78FE56486BC3E845EA715FC4610455F80AC836814018AAEF2DA333D2F5B0E6E9D773B355A79E1A09F42CAB9FD5218DFB4C51CE16304",
+    "VaultID": "78926F1319073BA8BB79EEF47F0C992BED95ED327C0161C651E896809A747F79",
+    "status": "success",
+    "hash": "1C47B8F1D7E1292C4708319EA2A79B00C2334EFC1FB86ADCC81B1FCB064AF0EA"
+  }
+}

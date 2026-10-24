@@ -1,0 +1,28 @@
+{
+  "type": "EscrowCancel",
+  "title": "Cancel escrow {OfferSequence} of {Owner|account}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Signed by",
+      "format": "account"
+    },
+    {
+      "path": "Owner",
+      "label": "Escrow owner",
+      "format": "account",
+      "required": true
+    },
+    {
+      "path": "OfferSequence",
+      "label": "Escrow sequence",
+      "format": "int",
+      "required": true
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ]
+}

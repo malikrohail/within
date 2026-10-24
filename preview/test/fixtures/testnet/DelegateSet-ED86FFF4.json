@@ -1,0 +1,29 @@
+{
+  "_source": {
+    "network": "testnet",
+    "hash": "ED86FFF48E158D52DC963D328E149EE0C5A998D552648B61228D5AF3BD50457D",
+    "validated": true,
+    "ledger_index": 21787146,
+    "result": "tesSUCCESS"
+  },
+  "tx_json": {
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Authorize": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+    "Fee": "12",
+    "Flags": 0,
+    "LastLedgerSequence": 21787161,
+    "Permissions": [
+      {
+        "Permission": {
+          "PermissionValue": "Payment"
+        }
+      }
+    ],
+    "Sequence": 21779642,
+    "SigningPubKey": "0250B6474EA8B26A489AB33E256EA546B94FF951C107CCF6C4E7BB31397BF93FF3",
+    "TransactionType": "DelegateSet",
+    "TxnSignature": "3044022068A21CF6472E14885F61347AD98BBFB20A485C8FD68C2D0030658BBF1DE4A70A02207CB403BD62699B197470195183613CEDE06C3C152D4A6B25CFCA414825FF0E81",
+    "status": "success",
+    "hash": "ED86FFF48E158D52DC963D328E149EE0C5A998D552648B61228D5AF3BD50457D"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "_source": {
+    "network": "devnet",
+    "hash": "35DF41124FF1DF972A654BC43A482E087A5322E55E4BDF4549D18D17C0F059FA",
+    "validated": true,
+    "ledger_index": 6378790,
+    "result": "tesSUCCESS"
+  },
+  "tx_json": {
+    "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+    "Fee": "4",
+    "Flags": 65536,
+    "LastLedgerSequence": 6378808,
+    "RawTransactions": [
+      {
+        "RawTransaction": {
+          "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+          "Amount": "55000000",
+          "Destination": "rnVJbderQvW3HBenZp6j29ELp6noDKau1b",
+          "Fee": "0",
+          "Flags": 1073741824,
+          "Memos": [
+            {
+              "Memo": {
+                "MemoData": "7B22696E766F696365223A2022494E562D42415443482D31222C202264617465223A2022323032362D31302D3234227D",
+                "MemoType": "696E766F696365"
+              }
+            }
+          ],
+          "Sequence": 6378763,
+          "SigningPubKey": "",
+          "TransactionType": "Payment"
+        }
+      },
+      {
+        "RawTransaction": {
+          "Account": "raB6a7BqyfNZRME5ErH6jSysNSNpjVyZow",
+          "Amount": "1000000",
+          "Destination": "rsQ9F4CpzmFrYdmpbi4kGBKE7CV1xnHgGH",
+          "Fee": "0",
+          "Flags": 1073741824,
+          "Sequence": 6378764,
+          "SigningPubKey": "",
+          "TransactionType": "Payment"
+        }
+      }
+    ],
+    "Sequence": 6378762,
+    "SigningPubKey": "EDF9A10127FC51B9F1853EFCA13ACD4D74EA0BB33A292CA4430F7325DE874EE1B6",
+    "TransactionType": "Batch",
+    "TxnSignature": "A8C237105A50BFAD4E2F7BD8725F8D835059B28E614F676B3654D056C1BD1AC860BE4F4486437A23AD5BF76C396B8BBA92CCAB00ED54A1A025D4A626AEC6E70E",
+    "status": "success",
+    "hash": "35DF41124FF1DF972A654BC43A482E087A5322E55E4BDF4549D18D17C0F059FA"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "type": "VaultWithdraw",
+  "title": "Withdraw {Amount|amount} from vault {VaultID|hash}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Share holder",
+      "format": "account"
+    },
+    {
+      "path": "VaultID",
+      "label": "Vault",
+      "format": "hash",
+      "required": true
+    },
+    {
+      "path": "Amount",
+      "label": "Amount",
+      "format": "amount",
+      "required": true
+    },
+    {
+      "path": "Destination",
+      "label": "Send to",
+      "format": "account"
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "Destination",
+      "level": "warn",
+      "text": "The withdrawn assets go to another account, not to the signer."
+    }
+  ]
+}

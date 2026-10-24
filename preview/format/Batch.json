@@ -1,0 +1,41 @@
+{
+  "type": "Batch",
+  "title": "Batch of {RawTransactions|count} transactions from {Account|account}",
+  "summary": "Batch of {RawTransactions|count} transactions, {Flags|batch_mode}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Submitted by",
+      "format": "account"
+    },
+    {
+      "path": "Flags",
+      "label": "Mode",
+      "format": "batch_mode",
+      "required": true
+    },
+    {
+      "path": "BatchSigners",
+      "label": "Co-signers",
+      "format": "signers"
+    },
+    {
+      "path": "RawTransactions",
+      "label": "Inner transactions",
+      "format": "inner_transactions",
+      "required": true
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ],
+  "risk": [
+    {
+      "when": "len(BatchSigners) > 0",
+      "level": "info",
+      "text": "Multi-account batch: every co-signer approves the whole batch, including the other accounts' legs."
+    }
+  ]
+}

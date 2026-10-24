@@ -1,0 +1,28 @@
+{
+  "type": "LoanPay",
+  "title": "Pay {Amount|amount} toward loan {LoanID|hash}",
+  "fields": [
+    {
+      "path": "Account",
+      "label": "Borrower",
+      "format": "account"
+    },
+    {
+      "path": "LoanID",
+      "label": "Loan",
+      "format": "hash",
+      "required": true
+    },
+    {
+      "path": "Amount",
+      "label": "Amount",
+      "format": "amount",
+      "required": true
+    },
+    {
+      "path": "Fee",
+      "label": "Network fee",
+      "format": "drops"
+    }
+  ]
+}
