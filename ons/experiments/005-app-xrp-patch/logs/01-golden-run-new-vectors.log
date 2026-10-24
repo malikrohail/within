@@ -1,0 +1,35 @@
+======================================== test session starts ========================================
+platform linux -- Python 3.13.5, pytest-8.4.1, pluggy-1.7.0 -- .venv/bin/python
+rootdir: ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone
+configfile: setup.cfg
+plugins: anyio-4.15.1
+collecting ... collected 153 items / 127 deselected / 26 selected
+
+tests/standalone/functional_test.py::test_blind_signing_disabled_go_to_settings[stax] PASSED  [  3%]
+tests/standalone/functional_test.py::test_blind_signing_disabled_go_to_menu[stax] PASSED      [  7%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/01-transaction-invalid.raw] PASSED [ 11%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/02-unknown-tx-type.raw] PASSED [ 15%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/03-nftoken-accept-offer.raw] PASSED [ 19%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/04-nftoken-accept-offer-broker.raw] PASSED [ 23%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/05-batch-two-payments.raw] PASSED [ 26%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/06-unknown-data-type.raw] PASSED [ 30%]
+tests/standalone/functional_test.py::test_blind_sign_enabled[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/blind-sign/07-mpt-issuance-create.raw] PASSED [ 34%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/30-credential-create/01-basic.raw] PASSED [ 38%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.raw] PASSED [ 42%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/32-vault-create/01-closed-ended-private.raw] PASSED [ 46%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/32-vault-create/02-iou-asset.raw] PASSED [ 50%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/32-vault-create/03-mpt-asset.raw] PASSED [ 53%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/33-vault-deposit/01-xrp.raw] PASSED [ 57%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/33-vault-deposit/02-iou.raw] PASSED [ 61%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/33-vault-deposit/03-mpt.raw] PASSED [ 65%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.raw] PASSED [ 69%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/35-loan-broker-set/01-basic.raw] PASSED [ 73%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/36-loan-set/01-first-signer.raw] PASSED [ 76%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/36-loan-set/02-all-fields.raw] PASSED [ 80%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/36-loan-set/03-countersigned.raw] PASSED [ 84%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/37-loan-pay/01-installment.raw] PASSED [ 88%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/37-loan-pay/02-full-payment.raw] PASSED [ 92%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/38-loan-manage/01-default.raw] PASSED [ 96%]
+tests/standalone/functional_test.py::test_sign_valid_tx[stax-ons/experiments/005-app-xrp-patch/app-xrp/tests/standalone/testcases/38-loan-manage/02-impair.raw] PASSED [100%]
+
+================================ 26 passed, 127 deselected in 58.18s ================================

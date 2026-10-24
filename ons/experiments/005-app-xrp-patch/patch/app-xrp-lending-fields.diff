@@ -1,0 +1,2117 @@
+diff --git a/src/xrp/amount.c b/src/xrp/amount.c
+index 4a9f9f8..3081dfc 100644
+--- a/src/xrp/amount.c
++++ b/src/xrp/amount.c
+@@ -278,16 +278,36 @@ static int format_issued_currency(uint64_t value, char* buf, size_t size) {
+     return parse_decimal_number(p, size, sign, exponent, mantissa);
+ }
+ 
++// MPT amount: flag byte (0x20 = MPT, 0x40 = positive), 8-byte unsigned
++// value, then the 24-byte MPTokenIssuanceID that read_amount() exposes as
++// its own "MPT Issuance ID" field. Printed as "MPT <value>" in the token's
++// own smallest unit, since the AssetScale lives on the issuance, not here.
++static int format_mpt(field_t* field, field_value_t* dst) {
++    if ((field->data.ptr[0] & 0x40u) == 0) {
++        return -1;
++    }
++
++    uint64_t value = read_unsigned64(field->data.ptr + 1);
++    if (value >> 63u) {
++        return -1;
++    }
++
++    strncpy(dst->buf, "MPT ", sizeof(dst->buf));
++    return print_uint64_t(dst->buf + 4, sizeof(dst->buf) - 4, value);
++}
++
+ void amount_formatter(field_t* field, field_value_t* dst) {
+-    uint64_t value = read_unsigned64(field->data.ptr);
+     int error;
+ 
+     if (field->length == XRP_AMOUNT_LEN) {
+-        error = format_xrp(value, dst);
++        error = format_xrp(read_unsigned64(field->data.ptr), dst);
+     } else if (field->length == ISSUED_CURRENCY_LEN) {
++        uint64_t value = read_unsigned64(field->data.ptr);
+         xrp_currency_t* currency = (xrp_currency_t*)&field->data.ptr[8];
+         format_standard_currency(currency, dst->buf, sizeof(dst->buf));
+         error = format_issued_currency(value, dst->buf, sizeof(dst->buf));
++    } else if (field->length == MPT_AMOUNT_LEN) {
++        error = format_mpt(field, dst);
+     } else {
+         error = 1;
+     }
+@@ -298,6 +318,93 @@ void amount_formatter(field_t* field, field_value_t* dst) {
+ }
+ 
+ void currency_formatter(field_t* field, field_value_t* dst) {
++    if (field->data_type == STI_ISSUE && field->length == XRP_MPT_ISSUE_SIZE) {
++        // Print the MPTokenIssuanceID the way explorers and xrpl.js do:
++        // 4-byte sequence followed by the 20-byte issuer. The codecs write
++        // the sequence byte-swapped in an Issue, so swap it back here.
++        uint8_t sequence[4] = {field->data.ptr[43], field->data.ptr[42],
++                               field->data.ptr[41], field->data.ptr[40]};
++        strncpy(dst->buf, "MPT ", sizeof(dst->buf));
++        read_hex(dst->buf + 4, sizeof(dst->buf) - 4, sequence,
++                 sizeof(sequence));
++        read_hex(dst->buf + 12, sizeof(dst->buf) - 12, field->data.ptr,
++                 XRP_ACCOUNT_SIZE);
++        return;
++    }
++
+     xrp_currency_t* currency = (xrp_currency_t*)field->data.ptr;
+     format_non_standard_currency(currency, dst);
+ }
++
++void uint64_formatter(field_t* field, field_value_t* dst) {
++    uint64_t value = read_unsigned64(field->data.ptr);
++    if (print_uint64_t(dst->buf, sizeof(dst->buf), value) != 0) {
++        strncpy(dst->buf, "[ERROR DURING FORMATTING]", sizeof(dst->buf));
++    }
++}
++
++// Widest exponent printed in plain decimal; beyond that the value is
++// shown as <digits>e<exponent> so it always fits the buffer.
++#define NUMBER_PLAIN_EXP_MAX 20
++#define NUMBER_PLAIN_EXP_MIN -40
++
++// STNumber: int64 mantissa then int32 exponent, both big-endian, value =
++// mantissa * 10^exponent. rippled normalizes the mantissa to 17-19 digits,
++// so "1000" arrives as 1000000000000000000e-15. Zero is mantissa 0 with a
++// sentinel exponent. No currency is printed: the unit is the vault asset,
++// which is not part of the transaction.
++void number_formatter(field_t* field, field_value_t* dst) {
++    uint64_t raw = read_unsigned64(field->data.ptr);
++    int32_t exponent = (int32_t)(((uint32_t)field->data.ptr[8] << 24) |
++                                 ((uint32_t)field->data.ptr[9] << 16) |
++                                 ((uint32_t)field->data.ptr[10] << 8) |
++                                 (uint32_t)field->data.ptr[11]);
++
++    if (raw == 0) {
++        strncpy(dst->buf, "0", sizeof(dst->buf));
++        return;
++    }
++
++    bool negative = (raw >> 63u) != 0;
++    uint64_t mantissa = negative ? (~raw + 1u) : raw;
++
++    while (mantissa % 10 == 0) {
++        mantissa /= 10;
++        exponent++;
++    }
++
++    char digits[21];
++    if (print_uint64_t(digits, sizeof(digits), mantissa) != 0) {
++        strncpy(dst->buf, "[ERROR DURING FORMATTING]", sizeof(dst->buf));
++        return;
++    }
++    size_t len = strlen(digits);
++    char* p = dst->buf;
++    size_t room = sizeof(dst->buf);
++
++    if (negative) {
++        *p++ = '-';
++        room--;
++    }
++
++    if (exponent > NUMBER_PLAIN_EXP_MAX || exponent < NUMBER_PLAIN_EXP_MIN) {
++        snprintf(p, room, "%se%d", digits, exponent);
++    } else if (exponent >= 0) {
++        memcpy(p, digits, len);
++        memset(p + len, '0', exponent);
++        p[len + exponent] = '\0';
++    } else if ((int32_t)len + exponent > 0) {
++        size_t decimal_pos = len + exponent;
++        memcpy(p, digits, decimal_pos);
++        p[decimal_pos] = '.';
++        memcpy(p + decimal_pos + 1, digits + decimal_pos, len - decimal_pos);
++        p[len + 1] = '\0';
++    } else {
++        size_t zeros = (size_t)(-exponent) - len;
++        p[0] = '0';
++        p[1] = '.';
++        memset(p + 2, '0', zeros);
++        memcpy(p + 2 + zeros, digits, len);
++        p[2 + zeros + len] = '\0';
++    }
++}
+diff --git a/src/xrp/amount.h b/src/xrp/amount.h
+index 8aaafa9..4275ae8 100644
+--- a/src/xrp/amount.h
++++ b/src/xrp/amount.h
+@@ -24,6 +24,8 @@
+ 
+ void amount_formatter(field_t *field, field_value_t *dst);
+ void currency_formatter(field_t *field, field_value_t *dst);
++void number_formatter(field_t *field, field_value_t *dst);
++void uint64_formatter(field_t *field, field_value_t *dst);
+ 
+ bool has_non_standard_currency(field_t *field);
+ bool is_all_zeros(const uint8_t *data, uint8_t length);
+@@ -31,5 +33,6 @@ bool is_valid_currency(const uint8_t *currency_data);
+ 
+ #define XRP_AMOUNT_LEN      8
+ #define ISSUED_CURRENCY_LEN 48
++#define MPT_AMOUNT_LEN      33
+ 
+ #endif  // LEDGER_APP_XRP_AMOUNT_H
+diff --git a/src/xrp/fields.c b/src/xrp/fields.c
+index 0c446eb..6b41d1a 100644
+--- a/src/xrp/fields.c
++++ b/src/xrp/fields.c
+@@ -50,6 +50,8 @@ const char* resolve_field_name(field_t* field) {
+                 return "Trading Fee";
+             case 6:
+                 return "Discount Fee";
++            case 22:
++                return "Management Fee Rate";
+         }
+     }
+ 
+@@ -102,6 +104,68 @@ const char* resolve_field_name(field_t* field) {
+                 return "Ticket Sequence";
+             case 42:
+                 return "NFToken Taxon";
++            case 52:
++                return "Permission";
++            case 54:
++                return "Start Date";
++            case 55:
++                return "Payment Interval";
++            case 56:
++                return "Grace Period";
++            case 60:
++                return "Payment Total";
++            case 62:
++                return "Cover Rate Minimum";
++            case 63:
++                return "Cover Rate Liquidation";
++            case 64:
++                return "Overpayment Fee";
++            case 65:
++                return "Interest Rate";
++            case 66:
++                return "Late Interest Rate";
++            case 67:
++                return "Close Interest Rate";
++            case 68:
++                return "Overpayment Interest Rate";
++            case 75:
++                return "Subscription Date";
++            case 76:
++                return "Redemption Date";
++        }
++    }
++
++    if (field->data_type == STI_INT32) {
++        switch (field->id) {
++            case 1:
++                return "Loan Scale";
++        }
++    }
++
++    if (field->data_type == STI_NUMBER) {
++        switch (field->id) {
++            // STNumber, in units of the vault asset
++            case 3:
++                return "Assets Maximum";
++            case 7:
++                return "Debt Maximum";
++            case 9:
++                return "Loan Origination Fee";
++            case 10:
++                return "Loan Service Fee";
++            case 11:
++                return "Late Payment Fee";
++            case 12:
++                return "Close Payment Fee";
++            case 14:
++                return "Principal Requested";
++        }
++    }
++
++    if (field->data_type == STI_HASH192) {
++        switch (field->id) {
++            case 1:
++                return "MPT Issuance ID";
+         }
+     }
+ 
+@@ -137,6 +201,16 @@ const char* resolve_field_name(field_t* field) {
+                 return "NFToken Buy Offer";
+             case 29:
+                 return "NFToken Sell Offer";
++            case 34:
++                return "Domain ID";
++            case 35:
++                return "Vault ID";
++            case 37:
++                return "Loan Broker ID";
++            case 38:
++                return "Loan ID";
++            case 0xFD:
++                return "Credential ID";
+             case 0xFE:
+                 return "NFToken Offer";
+         }
+@@ -213,6 +287,12 @@ const char* resolve_field_name(field_t* field) {
+                 return "Fulfillment";
+             case 17:
+                 return "Condition";
++            case 27:
++                return "Data";
++            case 30:
++                return "MPT Metadata";
++            case 31:
++                return "Credential Type";
+         }
+     }
+ 
+@@ -221,6 +301,8 @@ const char* resolve_field_name(field_t* field) {
+             // vector 256
+             case 4:
+                 return "NFToken Offers";
++            case 5:
++                return "Credential IDs";
+         }
+     }
+ 
+@@ -242,6 +324,14 @@ const char* resolve_field_name(field_t* field) {
+                 return "Regular Key";
+             case 9:
+                 return "NFToken Minter";
++            case 11:
++                return "Holder";
++            case 12:
++                return "Delegate";
++            case 24:
++                return "Subject";
++            case 26:
++                return "Counterparty";
+         }
+     }
+ 
+@@ -257,8 +347,18 @@ const char* resolve_field_name(field_t* field) {
+                 return "NFToken";
+             case 16:
+                 return "Signer";
++            case 15:
++                return "Permission";
+             case 27:
+                 return "Auth Account";
++            case 33:
++                return "Credential";
++            case 34:
++                return "Raw Transaction";
++            case 35:
++                return "Batch Signer";
++            case 37:
++                return "Counterparty Signature";
+         }
+     }
+ 
+@@ -276,14 +376,30 @@ const char* resolve_field_name(field_t* field) {
+                 return "NFTokens";
+             case 25:
+                 return "Auth Accounts";
++            case 28:
++                return "Accepted Credentials";
++            case 29:
++                return "Permissions";
++            case 30:
++                return "Raw Transactions";
++            case 31:
++                return "Batch Signers";
+         }
+     }
+ 
+     if (field->data_type == STI_UINT8) {
+         switch (field->id) {
+             // 8-bit integers
++            case 4:
++                return "Scale";
++            case 5:
++                return "Asset Scale";
+             case 16:
+                 return "Tick Size";
++            case 20:
++                return "Withdrawal Policy";
++            case 22:
++                return "Vault Kind";
+         }
+     }
+ 
+diff --git a/src/xrp/fields.h b/src/xrp/fields.h
+index 9f43000..93d6721 100644
+--- a/src/xrp/fields.h
++++ b/src/xrp/fields.h
+@@ -27,16 +27,20 @@ typedef enum {
+     // Normal field types
+     STI_UINT16 = 0x01,
+     STI_UINT32 = 0x02,
++    STI_UINT64 = 0x03,
+     STI_HASH128 = 0x04,
+     STI_HASH256 = 0x05,
+     STI_AMOUNT = 0x06,
+     STI_VL = 0x07,
+     STI_ACCOUNT = 0x08,
++    STI_NUMBER = 0x09,
++    STI_INT32 = 0x0A,
+     STI_OBJECT = 0x0E,
+     STI_ARRAY = 0x0F,
+     STI_UINT8 = 0x10,
+     STI_PATHSET = 0x12,
+     STI_VECTOR256 = 0x13,
++    STI_HASH192 = 0x15,
+     STI_ISSUE = 0x18,
+ 
+     // Custom field types
+@@ -46,13 +50,18 @@ typedef enum {
+ // Small collection of used field IDs
+ 
+ // UINT8
+-#define XRP_UINT8_TICK_SIZE 0x10
++#define XRP_UINT8_SCALE             0x04
++#define XRP_UINT8_ASSET_SCALE       0x05
++#define XRP_UINT8_TICK_SIZE         0x10
++#define XRP_UINT8_WITHDRAWAL_POLICY 0x14
++#define XRP_UINT8_VAULT_KIND        0x16
+ // UINT16
+ #define XRP_UINT16_TRANSACTION_TYPE 0x02
+ #define XRP_UINT16_SIGNER_WEIGHT    0x03
+ #define XRP_UINT16_TRANSFER_FEE     0x04
+ #define XRP_UINT16_TRADING_FEE      0x05
+ #define XRP_UINT16_DISCOUNTED_FEE   0x06
++#define XRP_UINT16_MANAGEMENT_FEE_RATE 0x16
+ // UINT32
+ #define XRP_UINT32_NETWORK_ID            0x01
+ #define XRP_UINT32_FLAGS                 0x02
+@@ -79,6 +88,22 @@ typedef enum {
+ #define XRP_UINT32_TICKET_COUNT          0x28
+ #define XRP_UINT32_TICKET_SEQUENCE       0x29
+ #define XRP_UINT32_NFTOKEN_TAXON         0x2A
++#define XRP_UINT32_PERMISSION_VALUE      0x34
++#define XRP_UINT32_START_DATE            0x36
++#define XRP_UINT32_PAYMENT_INTERVAL      0x37
++#define XRP_UINT32_GRACE_PERIOD          0x38
++#define XRP_UINT32_PAYMENT_TOTAL         0x3C
++#define XRP_UINT32_COVER_RATE_MINIMUM    0x3E
++#define XRP_UINT32_COVER_RATE_LIQUIDATION 0x3F
++#define XRP_UINT32_OVERPAYMENT_FEE       0x40
++#define XRP_UINT32_INTEREST_RATE         0x41
++#define XRP_UINT32_LATE_INTEREST_RATE    0x42
++#define XRP_UINT32_CLOSE_INTEREST_RATE   0x43
++#define XRP_UINT32_OVERPAYMENT_INTEREST_RATE 0x44
++#define XRP_UINT32_SUBSCRIPTION_DATE     0x4B
++#define XRP_UINT32_REDEMPTION_DATE       0x4C
++// HASH192
++#define XRP_HASH192_MPTOKEN_ISSUANCE_ID 0x01
+ // HASH128
+ #define XRP_HASH128_EMAIL_HASH 0x01
+ // HASH256
+@@ -93,10 +118,26 @@ typedef enum {
+ #define XRP_HASH256_CHECK_ID           0x18
+ #define XRP_HASH256_NFTOKEN_BUY_OFFER  0x1C
+ #define XRP_HASH256_NFTOKEN_SELL_OFFER 0x1D
++#define XRP_HASH256_DOMAIN_ID          0x22
++#define XRP_HASH256_VAULT_ID           0x23
++#define XRP_HASH256_LOAN_BROKER_ID     0x25
++#define XRP_HASH256_LOAN_ID            0x26
+ // Not a real XRPL field code: a Vector256 entry has no per-element field ID
+ // of its own, so this display-only value is picked far outside the range
+ // rippled actually assigns to Hash256 fields.
+ #define XRP_HASH256_NFTOKEN_OFFER 0xFE
++// Same idea for the entries of a CredentialIDs vector.
++#define XRP_HASH256_CREDENTIAL_ID 0xFD
++// NUMBER (STNumber: int64 mantissa, int32 exponent, both big-endian)
++#define XRP_NUMBER_ASSETS_MAXIMUM      0x03
++#define XRP_NUMBER_DEBT_MAXIMUM        0x07
++#define XRP_NUMBER_LOAN_ORIGINATION_FEE 0x09
++#define XRP_NUMBER_LOAN_SERVICE_FEE    0x0A
++#define XRP_NUMBER_LATE_PAYMENT_FEE    0x0B
++#define XRP_NUMBER_CLOSE_PAYMENT_FEE   0x0C
++#define XRP_NUMBER_PRINCIPAL_REQUESTED 0x0E
++// INT32
++#define XRP_INT32_LOAN_SCALE 0x01
+ // AMOUNT
+ #define XRP_UINT64_AMOUNT                    0x01
+ #define XRP_UINT64_BALANCE                   0x02
+@@ -132,6 +173,8 @@ typedef enum {
+ #define XRP_VL_CONDITION       0x11
+ #define XRP_VL_DID_DOCUMENT    0x1A
+ #define XRP_VL_DATA            0x1B
++#define XRP_VL_MPTOKEN_METADATA 0x1E
++#define XRP_VL_CREDENTIAL_TYPE 0x1F
+ // AccountID
+ #define XRP_ACCOUNT_ACCOUNT                    0x01
+ #define XRP_ACCOUNT_OWNER                      0x02
+@@ -141,20 +184,30 @@ typedef enum {
+ #define XRP_ACCOUNT_UNAUTHORIZE                0x06
+ #define XRP_ACCOUNT_REGULAR_KEY                0x08
+ #define XRP_ACCOUNT_NFTOKEN_MINTER             0x09
++#define XRP_ACCOUNT_HOLDER                     0x0B
++#define XRP_ACCOUNT_DELEGATE                   0x0C
+ #define XRP_ACCOUNT_OTHER_CHAIN_SOURCE         0x12
+ #define XRP_ACCOUNT_OTHER_CHAIN_DESTINATION    0x13
+ #define XRP_ACCOUNT_ATTESTATION_SIGNER_ACCOUNT 0x14
+ #define XRP_ACCOUNT_ATTESTATION_REWARD_ACCOUNT 0x15
+ #define XRP_ACCOUNT_LOCKING_CHAIN_DOOR         0x16
+ #define XRP_ACCOUNT_ISSUING_CHAIN_DOOR         0x17
++#define XRP_ACCOUNT_SUBJECT                    0x18
++#define XRP_ACCOUNT_COUNTERPARTY               0x1A
+ // VECTOR256
+ #define XRP_VECTOR256_NF_TOKEN_OFFERS 0x04
++#define XRP_VECTOR256_CREDENTIAL_IDS  0x05
+ // STOBJECT
+ #define XRP_STOBJECT_MEMO         0x0A
+ #define XRP_STOBJECT_SIGNER_ENTRY 0x0B
+ #define XRP_STOBJECT_NFTOKEN      0x0C
+ #define XRP_STOBJECT_SIGNER       0x10
+ #define XRP_STOBJECT_AUTH_ACCOUNT 0x1B
++#define XRP_STOBJECT_PERMISSION   0x0F
++#define XRP_STOBJECT_CREDENTIAL   0x21
++#define XRP_STOBJECT_RAW_TRANSACTION 0x22
++#define XRP_STOBJECT_BATCH_SIGNER 0x23
++#define XRP_STOBJECT_COUNTERPARTY_SIGNATURE 0x25
+ // STARRAY
+ #define XRP_STARRAY_SIGNERS             0x03
+ #define XRP_STARRAY_SIGNER_ENTRIES      0x04
+@@ -163,6 +216,10 @@ typedef enum {
+ #define XRP_STARRAY_MAJORITIES          0x10
+ #define XRP_STARRAY_DISABLED_VALIDATORS 0x11
+ #define XRP_STARRAY_AUTH_ACCOUNTS       0x19
++#define XRP_STARRAY_ACCEPTED_CREDENTIALS 0x1C
++#define XRP_STARRAY_PERMISSIONS         0x1D
++#define XRP_STARRAY_RAW_TRANSACTIONS    0x1E
++#define XRP_STARRAY_BATCH_SIGNERS       0x1F
+ // ISSUE
+ #define XRP_ISSUE_ASSET  0x03
+ #define XRP_ISSUE_ASSET2 0x04
+@@ -181,6 +238,10 @@ typedef enum {
+ #define XRP_CURRENCY_SIZE  20
+ #define XRP_VECTOR256_SIZE 32
+ #define XRP_ISSUE_SIZE     40
++// An Issue naming an MPT: 20-byte issuer, ACCOUNT_ONE, 4-byte sequence
++#define XRP_MPT_ISSUE_SIZE 44
++#define XRP_HASH192_SIZE   24
++#define XRP_NUMBER_SIZE    12
+ 
+ typedef struct {
+     uint8_t buf[XRP_ACCOUNT_SIZE];
+diff --git a/src/xrp/flags.c b/src/xrp/flags.c
+index 4ab316d..db603e1 100644
+--- a/src/xrp/flags.c
++++ b/src/xrp/flags.c
+@@ -392,6 +392,66 @@ static void format_amm_withdraw_flags(uint32_t value, field_value_t* dst) {
+     }
+ }
+ 
++static void format_vault_create_flags(uint32_t value, field_value_t* dst) {
++// VaultCreate flags
++#define TF_VAULT_PRIVATE 0x00010000u
++#define TF_VAULT_SHARE_NON_TRANSFERABLE 0x00020000u
++// Keep in sync with the checks below (see ACCOUNT_SET_KNOWN_FLAGS).
++#define VAULT_CREATE_KNOWN_FLAGS \
++    (TF_VAULT_PRIVATE | TF_VAULT_SHARE_NON_TRANSFERABLE)
++
++    size_t offset = 0;
++    if (HAS_FLAG(value, TF_VAULT_PRIVATE)) {
++        offset = append_item(dst, offset, "Private");
++    }
++    if (HAS_FLAG(value, TF_VAULT_SHARE_NON_TRANSFERABLE)) {
++        append_item(dst, offset, "Share Non Transferable");
++    }
++}
++
++static void format_loan_manage_flags(uint32_t value, field_value_t* dst) {
++// LoanManage flags. "Default" seizes the broker's first-loss cover, so it
++// must be spelled out on the device.
++#define TF_LOAN_DEFAULT 0x00010000u
++#define TF_LOAN_IMPAIR 0x00020000u
++#define TF_LOAN_UNIMPAIR 0x00040000u
++// Keep in sync with the checks below (see ACCOUNT_SET_KNOWN_FLAGS).
++#define LOAN_MANAGE_KNOWN_FLAGS \
++    (TF_LOAN_DEFAULT | TF_LOAN_IMPAIR | TF_LOAN_UNIMPAIR)
++
++    size_t offset = 0;
++    if (HAS_FLAG(value, TF_LOAN_DEFAULT)) {
++        offset = append_item(dst, offset, "Default");
++    }
++    if (HAS_FLAG(value, TF_LOAN_IMPAIR)) {
++        offset = append_item(dst, offset, "Impair");
++    }
++    if (HAS_FLAG(value, TF_LOAN_UNIMPAIR)) {
++        append_item(dst, offset, "Unimpair");
++    }
++}
++
++static void format_loan_pay_flags(uint32_t value, field_value_t* dst) {
++// LoanPay flags
++#define TF_LOAN_OVERPAYMENT 0x00010000u
++#define TF_LOAN_FULL_PAYMENT 0x00020000u
++#define TF_LOAN_LATE_PAYMENT 0x00040000u
++// Keep in sync with the checks below (see ACCOUNT_SET_KNOWN_FLAGS).
++#define LOAN_PAY_KNOWN_FLAGS \
++    (TF_LOAN_OVERPAYMENT | TF_LOAN_FULL_PAYMENT | TF_LOAN_LATE_PAYMENT)
++
++    size_t offset = 0;
++    if (HAS_FLAG(value, TF_LOAN_OVERPAYMENT)) {
++        offset = append_item(dst, offset, "Overpayment");
++    }
++    if (HAS_FLAG(value, TF_LOAN_FULL_PAYMENT)) {
++        offset = append_item(dst, offset, "Full Payment");
++    }
++    if (HAS_FLAG(value, TF_LOAN_LATE_PAYMENT)) {
++        append_item(dst, offset, "Late Payment");
++    }
++}
++
+ void format_flags(field_t* field, field_value_t* dst) {
+     uint32_t value = field->data.u32;
+     switch (parse_context.transaction_type) {
+@@ -422,6 +482,15 @@ void format_flags(field_t* field, field_value_t* dst) {
+         case TRANSACTION_AMM_WITHDRAW:
+             format_amm_withdraw_flags(value, dst);
+             break;
++        case TRANSACTION_VAULT_CREATE:
++            format_vault_create_flags(value, dst);
++            break;
++        case TRANSACTION_LOAN_MANAGE:
++            format_loan_manage_flags(value, dst);
++            break;
++        case TRANSACTION_LOAN_PAY:
++            format_loan_pay_flags(value, dst);
++            break;
+         default:
+             snprintf(dst->buf, sizeof(dst->buf),
+                      "No flags for transaction type %d",
+@@ -473,6 +542,15 @@ bool has_unknown_flags(uint16_t transaction_type, uint32_t value) {
+         case TRANSACTION_AMM_WITHDRAW:
+             known |= AMM_WITHDRAW_KNOWN_FLAGS;
+             break;
++        case TRANSACTION_VAULT_CREATE:
++            known |= VAULT_CREATE_KNOWN_FLAGS;
++            break;
++        case TRANSACTION_LOAN_MANAGE:
++            known |= LOAN_MANAGE_KNOWN_FLAGS;
++            break;
++        case TRANSACTION_LOAN_PAY:
++            known |= LOAN_PAY_KNOWN_FLAGS;
++            break;
+         default:
+             // No specific-flag formatter for this type: nothing to check.
+             return false;
+diff --git a/src/xrp/fmt.c b/src/xrp/fmt.c
+index 14e1815..3b94b66 100644
+--- a/src/xrp/fmt.c
++++ b/src/xrp/fmt.c
+@@ -65,6 +65,18 @@ void format_field(field_t* field, field_value_t* dst) {
+         case STI_ISSUE:
+             currency_formatter(field, dst);
+             break;
++        case STI_UINT64:
++            uint64_formatter(field, dst);
++            break;
++        case STI_NUMBER:
++            number_formatter(field, dst);
++            break;
++        case STI_INT32:
++            int32_formatter(field, dst);
++            break;
++        case STI_HASH192:
++            hash_formatter192(field, dst);
++            break;
+         default:
+             strncpy(dst->buf, "[Not implemented]", sizeof(dst->buf));
+             break;
+diff --git a/src/xrp/general.c b/src/xrp/general.c
+index 551154e..2365660 100644
+--- a/src/xrp/general.c
++++ b/src/xrp/general.c
+@@ -105,17 +105,126 @@ static const char* resolve_transaction_name(uint16_t value) {
+             return "AMM Bid";
+         case TRANSACTION_AMM_DELETE:
+             return "AMM Delete";
++        case TRANSACTION_MPTOKEN_ISSUANCE_CREATE:
++            return "MPT Issuance Create";
++        case TRANSACTION_MPTOKEN_ISSUANCE_DESTROY:
++            return "MPT Issuance Destroy";
++        case TRANSACTION_MPTOKEN_ISSUANCE_SET:
++            return "MPT Issuance Set";
++        case TRANSACTION_MPTOKEN_AUTHORIZE:
++            return "MPT Authorize";
++        case TRANSACTION_CREDENTIAL_CREATE:
++            return "Credential Create";
++        case TRANSACTION_CREDENTIAL_ACCEPT:
++            return "Credential Accept";
++        case TRANSACTION_CREDENTIAL_DELETE:
++            return "Credential Delete";
++        case TRANSACTION_PERMISSIONED_DOMAIN_SET:
++            return "Permissioned Domain Set";
++        case TRANSACTION_PERMISSIONED_DOMAIN_DELETE:
++            return "Permissioned Domain Delete";
++        case TRANSACTION_DELEGATE_SET:
++            return "Delegate Set";
++        case TRANSACTION_VAULT_CREATE:
++            return "Vault Create";
++        case TRANSACTION_VAULT_SET:
++            return "Vault Set";
++        case TRANSACTION_VAULT_DELETE:
++            return "Vault Delete";
++        case TRANSACTION_VAULT_DEPOSIT:
++            return "Vault Deposit";
++        case TRANSACTION_VAULT_WITHDRAW:
++            return "Vault Withdraw";
++        case TRANSACTION_VAULT_CLAWBACK:
++            return "Vault Clawback";
++        case TRANSACTION_BATCH:
++            return "Batch";
++        case TRANSACTION_LOAN_BROKER_SET:
++            return "Loan Broker Set";
++        case TRANSACTION_LOAN_BROKER_DELETE:
++            return "Loan Broker Delete";
++        case TRANSACTION_LOAN_BROKER_COVER_DEPOSIT:
++            return "Loan Broker Cover Deposit";
++        case TRANSACTION_LOAN_BROKER_COVER_WITHDRAW:
++            return "Loan Broker Cover Withdraw";
++        case TRANSACTION_LOAN_BROKER_COVER_CLAWBACK:
++            return "Loan Broker Cover Clawback";
++        case TRANSACTION_LOAN_SET:
++            return "Loan Set";
++        case TRANSACTION_LOAN_DELETE:
++            return "Loan Delete";
++        case TRANSACTION_LOAN_MANAGE:
++            return "Loan Manage";
++        case TRANSACTION_LOAN_PAY:
++            return "Loan Pay";
+         default:
+             return "Unknown";
+     }
+ }
+ 
++// DelegateSet permission values above the transaction-type range
++// (xrpl.js definitions.json, "granular permissions").
++static const char* resolve_granular_permission_name(uint32_t value) {
++    switch (value) {
++        case 65537:
++            return "Trustline Authorize";
++        case 65538:
++            return "Trustline Freeze";
++        case 65539:
++            return "Trustline Unfreeze";
++        case 65540:
++            return "Account Domain Set";
++        case 65541:
++            return "Account Email Hash Set";
++        case 65542:
++            return "Account Message Key Set";
++        case 65543:
++            return "Account Transfer Rate Set";
++        case 65544:
++            return "Account Tick Size Set";
++        case 65545:
++            return "Payment Mint";
++        case 65546:
++            return "Payment Burn";
++        case 65547:
++            return "MPT Issuance Lock";
++        case 65548:
++            return "MPT Issuance Unlock";
++        default:
++            return NULL;
++    }
++}
++
++// A DelegateSet Permission grants one transaction type (its code plus one;
++// 0 is reserved) or one granular permission. Show the name: a grant of
++// "Payment" and one of "Account Setting" must not read the same.
++static void format_permission_value(uint32_t value, field_value_t* dst) {
++    const char* name = NULL;
++
++    if (value >= 1 && value <= 0xFFFF) {
++        name = resolve_transaction_name((uint16_t)(value - 1));
++        if (strcmp(name, "Unknown") == 0) {
++            name = NULL;
++        }
++    } else {
++        name = resolve_granular_permission_name(value);
++    }
++
++    if (name != NULL) {
++        strncpy(dst->buf, name, sizeof(dst->buf));
++    } else {
++        snprintf(dst->buf, sizeof(dst->buf), "Unknown (%u)", value);
++    }
++}
++
+ void uint16_formatter(field_t* field, field_value_t* dst) {
+     uint16_t value = field->data.u16;
+ 
+     if (is_transaction_type_field(field)) {
+         const char* name = resolve_transaction_name(value);
+         strncpy(dst->buf, name, sizeof(dst->buf));
++    } else if (is_percentage(field)) {
++        format_percentage(field, dst);
+     } else {
+         snprintf(dst->buf, sizeof(dst->buf), "%u", value);
+     }
+@@ -130,12 +239,22 @@ void uint32_formatter(field_t* field, field_value_t* dst) {
+         format_time_delta(field, dst);
+     } else if (is_percentage(field)) {
+         format_percentage(field, dst);
++    } else if (field->id == XRP_UINT32_PERMISSION_VALUE) {
++        format_permission_value(field->data.u32, dst);
+     } else {
+         uint32_t value = field->data.u32;
+         snprintf(dst->buf, sizeof(dst->buf), "%u", value);
+     }
+ }
+ 
++void int32_formatter(field_t* field, field_value_t* dst) {
++    int32_t value = (int32_t)(((uint32_t)field->data.ptr[0] << 24) |
++                              ((uint32_t)field->data.ptr[1] << 16) |
++                              ((uint32_t)field->data.ptr[2] << 8) |
++                              (uint32_t)field->data.ptr[3]);
++    snprintf(dst->buf, sizeof(dst->buf), "%d", value);
++}
++
+ void hash_formatter128(field_t* field, field_value_t* dst) {
+     read_hex(dst->buf, sizeof(dst->buf), field->data.hash128->buf,
+              sizeof(field->data.hash128->buf));
+@@ -146,6 +265,10 @@ void hash_formatter256(field_t* field, field_value_t* dst) {
+              sizeof(field->data.hash256->buf));
+ }
+ 
++void hash_formatter192(field_t* field, field_value_t* dst) {
++    read_hex(dst->buf, sizeof(dst->buf), field->data.ptr, XRP_HASH192_SIZE);
++}
++
+ static bool should_format_blob_as_string(field_t* field) {
+     switch (field->id) {
+         case XRP_VL_DOMAIN:
+@@ -153,6 +276,8 @@ static bool should_format_blob_as_string(field_t* field) {
+         case XRP_VL_MEMO_FORMAT:
+         case XRP_VL_MEMO_DATA:
+         case XRP_VL_URI:
++        case XRP_VL_DATA:
++        case XRP_VL_CREDENTIAL_TYPE:
+             return is_purely_ascii(field->data.ptr, field->length, false);
+         default:
+             return false;
+diff --git a/src/xrp/general.h b/src/xrp/general.h
+index 3cf36bb..39b599a 100644
+--- a/src/xrp/general.h
++++ b/src/xrp/general.h
+@@ -24,6 +24,8 @@
+ void uint8_formatter(field_t *field, field_value_t *dst);
+ void uint16_formatter(field_t *field, field_value_t *dst);
+ void uint32_formatter(field_t *field, field_value_t *dst);
++void int32_formatter(field_t *field, field_value_t *dst);
++void hash_formatter192(field_t *field, field_value_t *dst);
+ void hash_formatter128(field_t *field, field_value_t *dst);
+ void hash_formatter256(field_t *field, field_value_t *dst);
+ void blob_formatter(field_t *field, field_value_t *dst);
+diff --git a/src/xrp/percentage.c b/src/xrp/percentage.c
+index ee5d36a..82e343c 100644
+--- a/src/xrp/percentage.c
++++ b/src/xrp/percentage.c
+@@ -26,7 +26,35 @@
+ 
+ #define DENOMINATOR 10000000
+ 
++// Lending-protocol rates (XLS-66) are in 1/10 basis point: 100000 = 100 %.
++static bool is_lending_rate(field_t* field) {
++    if (field->data_type == STI_UINT16) {
++        return field->id == XRP_UINT16_MANAGEMENT_FEE_RATE;
++    }
++
++    if (field->data_type == STI_UINT32) {
++        switch (field->id) {
++            case XRP_UINT32_COVER_RATE_MINIMUM:
++            case XRP_UINT32_COVER_RATE_LIQUIDATION:
++            case XRP_UINT32_OVERPAYMENT_FEE:
++            case XRP_UINT32_INTEREST_RATE:
++            case XRP_UINT32_LATE_INTEREST_RATE:
++            case XRP_UINT32_CLOSE_INTEREST_RATE:
++            case XRP_UINT32_OVERPAYMENT_INTEREST_RATE:
++                return true;
++            default:
++                return false;
++        }
++    }
++
++    return false;
++}
++
+ bool is_percentage(field_t* field) {
++    if (is_lending_rate(field)) {
++        return true;
++    }
++
+     if (field->data_type == STI_UINT32) {
+         switch (field->id) {
+             case XRP_UINT32_TRANSFER_RATE:
+@@ -91,7 +119,24 @@ static void format_quality(field_value_t* dst, uint32_t value) {
+     }
+ }
+ 
++// 1/10 basis point to percent: 500 -> "0.5 %", 100000 -> "100 %".
++static void format_lending_rate(field_value_t* dst, uint32_t value) {
++    snprintf(dst->buf, sizeof(dst->buf), "%u.%03u", value / 1000,
++             value % 1000);
++    remove_redundant_decimals(dst);
++
++    size_t total_length = strlen(dst->buf);
++    strncpy(dst->buf + total_length, " %", sizeof(dst->buf) - total_length);
++}
++
+ void format_percentage(field_t* field, field_value_t* dst) {
++    if (is_lending_rate(field)) {
++        format_lending_rate(dst, field->data_type == STI_UINT16
++                                     ? field->data.u16
++                                     : field->data.u32);
++        return;
++    }
++
+     uint32_t value = field->data.u32;
+ 
+     if (field->id == XRP_UINT32_TRANSFER_RATE) {
+diff --git a/src/xrp/time.c b/src/xrp/time.c
+index b93b36b..59da483 100644
+--- a/src/xrp/time.c
++++ b/src/xrp/time.c
+@@ -48,6 +48,9 @@ bool is_time(field_t* field) {
+             case XRP_UINT32_EXPIRATION:
+             case XRP_UINT32_CANCEL_AFTER:
+             case XRP_UINT32_FINISH_AFTER:
++            case XRP_UINT32_START_DATE:
++            case XRP_UINT32_SUBSCRIPTION_DATE:
++            case XRP_UINT32_REDEMPTION_DATE:
+                 return true;
+             default:
+                 return false;
+@@ -58,8 +61,18 @@ bool is_time(field_t* field) {
+ }
+ 
+ bool is_time_delta(field_t* field) {
+-    return field->data_type == STI_UINT32 &&
+-           field->id == XRP_UINT32_SETTLE_DELAY;
++    if (field->data_type == STI_UINT32) {
++        switch (field->id) {
++            case XRP_UINT32_SETTLE_DELAY:
++            case XRP_UINT32_PAYMENT_INTERVAL:
++            case XRP_UINT32_GRACE_PERIOD:
++                return true;
++            default:
++                return false;
++        }
++    } else {
++        return false;
++    }
+ }
+ 
+ // Inspired from
+diff --git a/src/xrp/transaction_types.h b/src/xrp/transaction_types.h
+index d341c31..aa1b440 100644
+--- a/src/xrp/transaction_types.h
++++ b/src/xrp/transaction_types.h
+@@ -55,6 +55,34 @@
+ #define TRANSACTION_AMM_VOTE               38
+ #define TRANSACTION_AMM_BID                39
+ #define TRANSACTION_AMM_DELETE             40
++#define TRANSACTION_MPTOKEN_ISSUANCE_CREATE  54
++#define TRANSACTION_MPTOKEN_ISSUANCE_DESTROY 55
++#define TRANSACTION_MPTOKEN_ISSUANCE_SET     56
++#define TRANSACTION_MPTOKEN_AUTHORIZE        57
++#define TRANSACTION_CREDENTIAL_CREATE        58
++#define TRANSACTION_CREDENTIAL_ACCEPT        59
++#define TRANSACTION_CREDENTIAL_DELETE        60
++#define TRANSACTION_PERMISSIONED_DOMAIN_SET    62
++#define TRANSACTION_PERMISSIONED_DOMAIN_DELETE 63
++#define TRANSACTION_DELEGATE_SET             64
++#define TRANSACTION_VAULT_CREATE             65
++#define TRANSACTION_VAULT_SET                66
++#define TRANSACTION_VAULT_DELETE             67
++#define TRANSACTION_VAULT_DEPOSIT            68
++#define TRANSACTION_VAULT_WITHDRAW           69
++#define TRANSACTION_VAULT_CLAWBACK           70
++#define TRANSACTION_BATCH                    71
++#define TRANSACTION_LOAN_BROKER_SET          74
++#define TRANSACTION_LOAN_BROKER_DELETE       75
++#define TRANSACTION_LOAN_BROKER_COVER_DEPOSIT  76
++#define TRANSACTION_LOAN_BROKER_COVER_WITHDRAW 77
++#define TRANSACTION_LOAN_BROKER_COVER_CLAWBACK 78
++#define TRANSACTION_LOAN_SET                 80
++#define TRANSACTION_LOAN_DELETE              81
++#define TRANSACTION_LOAN_MANAGE              82
++// 83 is unassigned in rippled; LoanPay is 84 (definitions.json, not the
++// XLS-66 draft text).
++#define TRANSACTION_LOAN_PAY                 84
+ 
+ static inline bool is_transaction_type_field(field_t *field) {
+     return field->data_type == STI_UINT16 && field->id == XRP_UINT16_TRANSACTION_TYPE;
+diff --git a/src/xrp/xrp_parse.c b/src/xrp/xrp_parse.c
+index 4b86011..a3cba46 100644
+--- a/src/xrp/xrp_parse.c
++++ b/src/xrp/xrp_parse.c
+@@ -125,7 +125,32 @@ static bool is_supported_transaction_type(uint16_t t) {
+         case TRANSACTION_AMM_VOTE:
+         case TRANSACTION_AMM_BID:
+         case TRANSACTION_AMM_DELETE:
++        case TRANSACTION_CREDENTIAL_CREATE:
++        case TRANSACTION_CREDENTIAL_ACCEPT:
++        case TRANSACTION_CREDENTIAL_DELETE:
++        case TRANSACTION_PERMISSIONED_DOMAIN_SET:
++        case TRANSACTION_PERMISSIONED_DOMAIN_DELETE:
++        case TRANSACTION_DELEGATE_SET:
++        case TRANSACTION_VAULT_CREATE:
++        case TRANSACTION_VAULT_SET:
++        case TRANSACTION_VAULT_DELETE:
++        case TRANSACTION_VAULT_DEPOSIT:
++        case TRANSACTION_VAULT_WITHDRAW:
++        case TRANSACTION_VAULT_CLAWBACK:
++        case TRANSACTION_LOAN_BROKER_SET:
++        case TRANSACTION_LOAN_BROKER_DELETE:
++        case TRANSACTION_LOAN_BROKER_COVER_DEPOSIT:
++        case TRANSACTION_LOAN_BROKER_COVER_WITHDRAW:
++        case TRANSACTION_LOAN_BROKER_COVER_CLAWBACK:
++        case TRANSACTION_LOAN_SET:
++        case TRANSACTION_LOAN_DELETE:
++        case TRANSACTION_LOAN_MANAGE:
++        case TRANSACTION_LOAN_PAY:
+             return true;
++        // MPToken* and Batch are named (general.c) but not clear-signed:
++        // Batch nests a TransactionType per inner transaction, which
++        // post_process_field() already forces to blind signing, and the
++        // MPToken issuance fields have no formatter yet.
+         default:
+             return false;
+     }
+@@ -275,7 +300,21 @@ err_t read_amount(parseContext_t* context, field_t* field) {
+     err_t err;
+ 
+     CHECK(peak_next_byte(context, &first_byte));
+-    if ((first_byte >> 7u) == 0) {
++    if ((first_byte >> 7u) == 0 && (first_byte & 0x20u) != 0) {
++        // MPT amount: 1 flag byte, 8-byte value, 24-byte MPTokenIssuanceID.
++        // Bit 0x20 only means MPT when bit 0x80 (issued currency) is clear:
++        // in an issued amount bits 5-0 are exponent bits. Bit 0x40 is
++        // "positive"; a negative MPT amount is never valid in a transaction
++        // and is rejected by amount_formatter().
++        CHECK(read_fixed_size_field(context, field, MPT_AMOUNT_LEN));
++
++        field_t* issuance_id;
++        CHECK(append_new_field(context, &issuance_id));
++        issuance_id->data_type = STI_HASH192;
++        issuance_id->id = XRP_HASH192_MPTOKEN_ISSUANCE_ID;
++        issuance_id->data.ptr = field->data.ptr + 9;
++        issuance_id->length = XRP_HASH192_SIZE;
++    } else if ((first_byte >> 7u) == 0) {
+         CHECK(read_fixed_size_field(context, field, XRP_AMOUNT_LEN));
+     } else {
+         CHECK(read_fixed_size_field(context, field, ISSUED_CURRENCY_LEN));
+@@ -337,14 +376,15 @@ err_t read_vector256_field(parseContext_t* context, field_t* field) {
+         // it generically and let the array index tell entries apart.
+         //
+         // The XRPL protocol also has Vector256 fields other than
+-        // NFTokenOffers (Indexes, Hashes, Amendments, CredentialIDs), but
+-        // this app only recognizes NFTokenOffers (field id 4) in
+-        // resolve_field_name()'s STI_VECTOR256 case (fields.c): any other
+-        // Vector256 field's own id resolves to "Unknown" and forces blind
+-        // signing before these synthesized entries are ever displayed. That
+-        // is why it's safe to hardcode this label here rather than branch
+-        // on field->id.
+-        hash256->id = XRP_HASH256_NFTOKEN_OFFER;
++        // NFTokenOffers and CredentialIDs (Indexes, Hashes, Amendments),
++        // but this app only recognizes those two in resolve_field_name()'s
++        // STI_VECTOR256 case (fields.c): any other Vector256 field's own id
++        // resolves to "Unknown" and forces blind signing before these
++        // synthesized entries are ever displayed. That is why it's safe to
++        // pick the label from just these two ids.
++        hash256->id = field->id == XRP_VECTOR256_CREDENTIAL_IDS
++                          ? XRP_HASH256_CREDENTIAL_ID
++                          : XRP_HASH256_NFTOKEN_OFFER;
+         hash256->data.hash256 =
+             (hash256_t*)(field->data.ptr + (i * XRP_VECTOR256_SIZE));
+         hash256->length = XRP_VECTOR256_SIZE;
+@@ -364,6 +404,17 @@ err_t read_issue(parseContext_t* context, field_t* field) {
+     }
+ 
+     if (!is_all_zeros(context->data + context->offset, 20)) {
++        // An MPT asset is encoded as the 20-byte issuer, then ACCOUNT_ONE
++        // (19 zero bytes and 0x01) in the issuer slot of an IOU, then the
++        // 4-byte sequence; currency_formatter() reassembles the
++        // MPTokenIssuanceID from it.
++        const uint8_t* issuer_slot = context->data + context->offset + 20;
++        if (has_data(context, XRP_MPT_ISSUE_SIZE) &&
++            is_all_zeros(issuer_slot, XRP_ACCOUNT_SIZE - 1) &&
++            issuer_slot[XRP_ACCOUNT_SIZE - 1] == 0x01) {
++            return read_fixed_size_field(context, field, XRP_MPT_ISSUE_SIZE);
++        }
++
+         CHECK(read_fixed_size_field(context, field, XRP_ISSUE_SIZE));
+         field_t* issuer;
+         CHECK(append_new_field(context, &issuer));
+@@ -550,8 +601,28 @@ err_t read_field_value(parseContext_t* context, field_t* field) {
+         case STI_ISSUE:
+             err = read_issue(context, field);
+             break;
++        case STI_UINT64:
++            err = read_fixed_size_field(context, field, 8);
++            break;
++        case STI_NUMBER:
++            err = read_fixed_size_field(context, field, XRP_NUMBER_SIZE);
++            break;
++        case STI_INT32:
++            err = read_fixed_size_field(context, field, 4);
++            break;
++        case STI_HASH192:
++            err = read_fixed_size_field(context, field, XRP_HASH192_SIZE);
++            break;
+         default:
+-            err.err = NOT_SUPPORTED;
++            // A data type this parser has no reader for. Its length is
++            // unknown, so nothing after it can be read; the caller stops
++            // parsing here and the transaction goes through the
++            // blind-signing flow (the signature covers the raw bytes as a
++            // whole, so no field is lost from what gets signed). Before
++            // this case existed, the app answered 0x6800 | NOT_SUPPORTED
++            // (0x680b on current SDKs) to any LoanSet because
++            // PrincipalRequested is an STNumber.
++            err.err = BLIND_SIGN_REQUIRED;
+             break;
+     }
+ 
+@@ -681,6 +752,12 @@ err_t parse_tx_internal(parseContext_t* context) {
+     context->has_empty_pub_key = false;
+     context->object_depth = 0;
+ 
++    // Set when parsing stopped before the end of the input: a data type
++    // without a reader, or a TransactionType that must not be trusted.
++    // Whatever was parsed is still shown, but only under the blind-signing
++    // warning, never as a normal review.
++    bool stopped_early = false;
++
+     while (context->offset != context->length) {
+         if (context->offset > context->length) {
+             err.err = EXCEPTION_OVERFLOW;
+@@ -689,7 +766,16 @@ err_t parse_tx_internal(parseContext_t* context) {
+ 
+         field_t* field;
+         CHECK(append_new_field(context, &field));
+-        CHECK(read_field(context, field));
++        err = read_field(context, field);
++        if (err.err == BLIND_SIGN_REQUIRED) {
++            // The field that stopped us has no usable value: drop it.
++            CHECK(remove_last_field(context, field));
++            stopped_early = true;
++            break;
++        }
++        if (err.err != SUCCESS) {
++            return err;
++        }
+ 
+         if (is_field_hidden(field)) {
+             // This must be done after all data has been read since we
+@@ -708,7 +794,7 @@ err_t parse_tx_internal(parseContext_t* context) {
+ 
+     sort_fields(&context->result);
+ 
+-    if (context->transaction_type == TRANSACTION_INVALID ||
++    if (stopped_early || context->transaction_type == TRANSACTION_INVALID ||
+         !is_supported_transaction_type(context->transaction_type)) {
+         err.err = BLIND_SIGN_REQUIRED;
+         return err;
+diff --git a/tests/standalone/testcases/30-credential-create/01-basic.json b/tests/standalone/testcases/30-credential-create/01-basic.json
+new file mode 100644
+index 0000000..2698a83
+--- /dev/null
++++ b/tests/standalone/testcases/30-credential-create/01-basic.json
+@@ -0,0 +1,12 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "CredentialCreate",
++  "Subject": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "CredentialType": "4B5943",
++  "Expiration": 849398400,
++  "URI": "68747470733a2f2f6465736b2e6578616d706c652f6b7963"
++}
+diff --git a/tests/standalone/testcases/30-credential-create/01-basic.raw b/tests/standalone/testcases/30-credential-create/01-basic.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..a893afa52d58de4cdb595d47cc1688dbad725f53
+GIT binary patch
+literal 140
+zcmV;70CWEm06HW9000LnGN8(UAR7Q-r~qg{00000000bgAp*CZqfbRq%9m?qs(7Vb
+zLvVh=yDRKD`CHXLB;w>+o@aF!XmoUNb2=|CWMy+}E@gOOZE$R5FKc;Ya32FpSwn#o
+u1rgzWxI4D-6O)~1ypE+g?a3zmfEX0^XRyjp%y$W*Ah1>&h2=U(MjxnPjW&D$
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/30-credential-create/01-basic.txt b/tests/standalone/testcases/30-credential-create/01-basic.txt
+new file mode 100644
+index 0000000..ee15e31
+--- /dev/null
++++ b/tests/standalone/testcases/30-credential-create/01-basic.txt
+@@ -0,0 +1,7 @@
++Transaction Type; Credential Create
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Expiration; 2026-12-01 00:00:00 UTC
++Fee; XRP 0.000012
++URI; https://desk.example/kyc
++Credential Type; KYC
++Subject;   rPT1Sjq2YGrB    MTttX4GZHjK     u9dyfzbpAYe   
+diff --git a/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.json b/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.json
+new file mode 100644
+index 0000000..bbfa103
+--- /dev/null
++++ b/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.json
+@@ -0,0 +1,26 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "DelegateSet",
++  "Authorize": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "Permissions": [
++    {
++      "Permission": {
++        "PermissionValue": "Payment"
++      }
++    },
++    {
++      "Permission": {
++        "PermissionValue": "TrustSet"
++      }
++    },
++    {
++      "Permission": {
++        "PermissionValue": "TrustlineAuthorize"
++      }
++    }
++  ]
++}
+diff --git a/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.raw b/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1c0de1e0a9363cd1dfa6bf6f6c8e98525839b89
+GIT binary patch
+literal 129
+zcmWe)a8O}jU|?5}W=LGYkl_Gi0|8I5BGdM{i~U^#PfgEGTUD_%#<`&G&~EKFmOrDf
+z+N(Tz5;ZTqQG`|SVeJm<Z6Adv&rRRcx770ONwq(%BHz+CoC-Ko&bdfoLzr~yQ!5WQ
+Y`4t~z-z%5^&1HNDp+&(oBar_Q0KE1wqW}N^
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.txt b/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.txt
+new file mode 100644
+index 0000000..ddb84e9
+--- /dev/null
++++ b/tests/standalone/testcases/31-delegate-set/01-payment-trustset-granular.txt
+@@ -0,0 +1,7 @@
++Transaction Type; Delegate Set
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Fee; XRP 0.000012
++Authorize;   rPT1Sjq2YGrB    MTttX4GZHjK     u9dyfzbpAYe   
++Permission [1]; Payment
++Permission [2]; Set Trust Line
++Permission [3]; Trustline Authorize
+diff --git a/tests/standalone/testcases/32-vault-create/01-closed-ended-private.json b/tests/standalone/testcases/32-vault-create/01-closed-ended-private.json
+new file mode 100644
+index 0000000..8244cd7
+--- /dev/null
++++ b/tests/standalone/testcases/32-vault-create/01-closed-ended-private.json
+@@ -0,0 +1,20 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultCreate",
++  "Asset": {
++    "currency": "XRP"
++  },
++  "AssetsMaximum": "1000000000",
++  "WithdrawalPolicy": 1,
++  "VaultKind": 1,
++  "Scale": 6,
++  "SubscriptionDate": 846806400,
++  "RedemptionDate": 849398400,
++  "DomainID": "D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0",
++  "Data": "6167656e742d63617368207661756c74",
++  "Flags": 65536
++}
+diff --git a/tests/standalone/testcases/32-vault-create/01-closed-ended-private.raw b/tests/standalone/testcases/32-vault-create/01-closed-ended-private.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..92f011f06225999494eed0e4a158ba660f3e2013
+GIT binary patch
+literal 196
+zcmWe)a8zPoWMEKXU|?WZkY-3+!Jy!6RB79w;A6DlR6~H$1p*+$0jLuQc#0L7w$EMc
+z?;3b&dUo2Xils5m1$BpZYrnDl8GY4W<<XO<dFchx0*UFVc_q5ZiNzTTWr?LZC5<Ai
+zf)8tVSa16%Jb7;Vp1!4)Z%?ZInaulO+vepd3=IGO|NqV+z{VgT!pI;X#>gxIu?&?2
+E0K-^KRR910
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/32-vault-create/01-closed-ended-private.txt b/tests/standalone/testcases/32-vault-create/01-closed-ended-private.txt
+new file mode 100644
+index 0000000..68fc0e0
+--- /dev/null
++++ b/tests/standalone/testcases/32-vault-create/01-closed-ended-private.txt
+@@ -0,0 +1,13 @@
++Transaction Type; Vault Create
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Flags; Private
++Subscription Date; 2026-11-01 00:00:00 UTC
++Redemption Date; 2026-12-01 00:00:00 UTC
++Domain ID; d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0
++Fee; XRP 0.000012
++Data; agent-cash vault
++Assets Maximum; 1000000000
++Scale; 6
++Withdrawal Policy; 1
++Vault Kind; 1
++Asset; XRP
+diff --git a/tests/standalone/testcases/32-vault-create/02-iou-asset.json b/tests/standalone/testcases/32-vault-create/02-iou-asset.json
+new file mode 100644
+index 0000000..f3faac4
+--- /dev/null
++++ b/tests/standalone/testcases/32-vault-create/02-iou-asset.json
+@@ -0,0 +1,14 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultCreate",
++  "Asset": {
++    "currency": "USD",
++    "issuer": "rhub8VRN55s94qWKDv6jmDy1pUykJzF3wq"
++  },
++  "AssetsMaximum": "0",
++  "WithdrawalPolicy": 1
++}
+diff --git a/tests/standalone/testcases/32-vault-create/02-iou-asset.raw b/tests/standalone/testcases/32-vault-create/02-iou-asset.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..8c579025efbcbf2cb6fa8098c80ed4ba37eb49fe
+GIT binary patch
+literal 139
+zcmWe)a8zMnU|?5}W=LGYkl_Gi0|8I5BGdM{i~U^#PfgEGTUD_%#<`&G&~EKFmOrDf
+z+N(Tz5;ZTqQG`|SVeJm<Z6Adv&rRRcx770ONwq(dAqFroG=LZaB8<!uFcA<P8tek*
+ZYTf3xjJ(E`mpSpf=EI5Ig~^kG3;?oCDrf)z
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/32-vault-create/02-iou-asset.txt b/tests/standalone/testcases/32-vault-create/02-iou-asset.txt
+new file mode 100644
+index 0000000..b49a359
+--- /dev/null
++++ b/tests/standalone/testcases/32-vault-create/02-iou-asset.txt
+@@ -0,0 +1,7 @@
++Transaction Type; Vault Create
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Fee; XRP 0.000012
++Assets Maximum; 0
++Withdrawal Policy; 1
++Asset; USD
++Issuer;   rhub8VRN55s9    4qWKDv6jmDy     1pUykJzF3wq   
+diff --git a/tests/standalone/testcases/32-vault-create/03-mpt-asset.json b/tests/standalone/testcases/32-vault-create/03-mpt-asset.json
+new file mode 100644
+index 0000000..9555205
+--- /dev/null
++++ b/tests/standalone/testcases/32-vault-create/03-mpt-asset.json
+@@ -0,0 +1,11 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultCreate",
++  "Asset": {
++    "mpt_issuance_id": "000000F05E7C5E7C5E7C5E7C5E7C5E7C5E7C5E7C5E7C5E7C"
++  }
++}
+diff --git a/tests/standalone/testcases/32-vault-create/03-mpt-asset.raw b/tests/standalone/testcases/32-vault-create/03-mpt-asset.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd90e0400be492363346832163f5009d3d6a3646
+GIT binary patch
+literal 126
+zcmWe)a8zMnU|?5}W=LGYkl_Gi0|8I5BGdM{i~U^#PfgEGTUD_%#<`&G&~EKFmOrDf
+x+N(Tz5;ZTqQG`|SVeJm<Z6Adv&rRRcx770ONwq)B5^*({5Mn9{$@l@t1ptszD9Qi;
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/32-vault-create/03-mpt-asset.txt b/tests/standalone/testcases/32-vault-create/03-mpt-asset.txt
+new file mode 100644
+index 0000000..9bc4727
+--- /dev/null
++++ b/tests/standalone/testcases/32-vault-create/03-mpt-asset.txt
+@@ -0,0 +1,4 @@
++Transaction Type; Vault Create
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Fee; XRP 0.000012
++Asset; MPT 000000f05e7c5e7c5e7c5e7c5e7c5e7c5e7c5e7c5e7c5e7c
+diff --git a/tests/standalone/testcases/33-vault-deposit/01-xrp.json b/tests/standalone/testcases/33-vault-deposit/01-xrp.json
+new file mode 100644
+index 0000000..5ad5024
+--- /dev/null
++++ b/tests/standalone/testcases/33-vault-deposit/01-xrp.json
+@@ -0,0 +1,10 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultDeposit",
++  "VaultID": "A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
++  "Amount": "100000000"
++}
+diff --git a/tests/standalone/testcases/33-vault-deposit/01-xrp.raw b/tests/standalone/testcases/33-vault-deposit/01-xrp.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..c82e5f1ebfc9f9fdbda5873445f1bf2e45d6957f
+GIT binary patch
+literal 123
+zcmWe)a8Y4kU|?5}W=LGY5TLw}07!HIs%HKAkRb!a00N$3MW*d@7yG*go|>MWwyI)j
+vjB`QVq21bVEPqB{wO4ucBx+uIqX?_u!`dCz+dc|Uo}0d>Z>i<mlWKneBhNNW
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/33-vault-deposit/01-xrp.txt b/tests/standalone/testcases/33-vault-deposit/01-xrp.txt
+new file mode 100644
+index 0000000..f23f527
+--- /dev/null
++++ b/tests/standalone/testcases/33-vault-deposit/01-xrp.txt
+@@ -0,0 +1,5 @@
++Transaction Type; Vault Deposit
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Vault ID; a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
++Amount; XRP 100
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/33-vault-deposit/02-iou.json b/tests/standalone/testcases/33-vault-deposit/02-iou.json
+new file mode 100644
+index 0000000..8797ade
+--- /dev/null
++++ b/tests/standalone/testcases/33-vault-deposit/02-iou.json
+@@ -0,0 +1,14 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultDeposit",
++  "VaultID": "A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
++  "Amount": {
++    "currency": "USD",
++    "issuer": "rhub8VRN55s94qWKDv6jmDy1pUykJzF3wq",
++    "value": "2500.5"
++  }
++}
+diff --git a/tests/standalone/testcases/33-vault-deposit/02-iou.raw b/tests/standalone/testcases/33-vault-deposit/02-iou.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..d40466ab61d004486dc078af66a03688386d2e39
+GIT binary patch
+literal 163
+zcmWe)a8Y4kU|?5}W=LGY5TLw}07$&*@yL+P=>$*@0)z&;fH_*Xxh*5Faph%B{I2<M
+zVs~Nkq#%O~2Z%bJVnwFya~J!&2A-OpowllCX^eA0-J#vuZ!CXCU$s|x^dxFtdZP%d
+Y;KSM-*4sV`PoA5;r*Em{+mmX40EhKKOaK4?
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/33-vault-deposit/02-iou.txt b/tests/standalone/testcases/33-vault-deposit/02-iou.txt
+new file mode 100644
+index 0000000..c3225bd
+--- /dev/null
++++ b/tests/standalone/testcases/33-vault-deposit/02-iou.txt
+@@ -0,0 +1,6 @@
++Transaction Type; Vault Deposit
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Vault ID; a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
++Amount; USD 2500.5
++Issuer;   rhub8VRN55s9    4qWKDv6jmDy     1pUykJzF3wq   
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/33-vault-deposit/03-mpt.json b/tests/standalone/testcases/33-vault-deposit/03-mpt.json
+new file mode 100644
+index 0000000..d257952
+--- /dev/null
++++ b/tests/standalone/testcases/33-vault-deposit/03-mpt.json
+@@ -0,0 +1,13 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultDeposit",
++  "VaultID": "A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
++  "Amount": {
++    "mpt_issuance_id": "000000F05E7C5E7C5E7C5E7C5E7C5E7C5E7C5E7C5E7C5E7C",
++    "value": "1000000"
++  }
++}
+diff --git a/tests/standalone/testcases/33-vault-deposit/03-mpt.raw b/tests/standalone/testcases/33-vault-deposit/03-mpt.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..710c13f67748cc336b18fdcd53969b495f56631e
+GIT binary patch
+literal 148
+zcmWe)a8Y4kU|?5}W=LGY5TLw}07y&#s%Bu|cX9xdAL42-VFpMB2zZJWnYPbe?C%<Q
+zYI=6ss*0sC&INUcc5A<}{26`KUggn~sCns)BCLWBYj;?0`zSnlZu*|SrIv3`s{H`~
+D01!Tw
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/33-vault-deposit/03-mpt.txt b/tests/standalone/testcases/33-vault-deposit/03-mpt.txt
+new file mode 100644
+index 0000000..a450440
+--- /dev/null
++++ b/tests/standalone/testcases/33-vault-deposit/03-mpt.txt
+@@ -0,0 +1,6 @@
++Transaction Type; Vault Deposit
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Vault ID; a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
++Amount; MPT 1000000
++MPT Issuance ID; 000000f05e7c5e7c5e7c5e7c5e7c5e7c5e7c5e7c5e7c5e7c
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.json b/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.json
+new file mode 100644
+index 0000000..d762fad
+--- /dev/null
++++ b/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.json
+@@ -0,0 +1,16 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "VaultWithdraw",
++  "VaultID": "A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
++  "Amount": "50000000",
++  "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "DestinationTag": 42,
++  "CredentialIDs": [
++    "C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1C1",
++    "C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2C2"
++  ]
++}
+diff --git a/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.raw b/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..20b29446c47ad75853582aed1c16dbee0c603e1e
+GIT binary patch
+literal 217
+zcmWe)a8+SoU|`n+5?Tt<42dfk0+bgL0ErGj)l9!WG-QAnK)_S1$h3X#Vt?1bQ`584
+zR#hyGaW1Gkv|Ia)<<ID=_9~B_M9oWY6k!#7Si8e|+ehKabJO?qEwy}mQteN($hY(j
+frvlEDb1qWY5GLLF)XKw6eg&(r!$AVz5CH%H^4xLM
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.txt b/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.txt
+new file mode 100644
+index 0000000..6d6523c
+--- /dev/null
++++ b/tests/standalone/testcases/34-vault-withdraw/01-destination-credentials.txt
+@@ -0,0 +1,10 @@
++Transaction Type; Vault Withdraw
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Destination Tag; 42
++Vault ID; a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
++Amount; XRP 50
++Fee; XRP 0.000012
++Destination;   rPT1Sjq2YGrB    MTttX4GZHjK     u9dyfzbpAYe   
++Credential IDs; 2
++Credential ID [1]; c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1
++Credential ID [2]; c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2
+diff --git a/tests/standalone/testcases/35-loan-broker-set/01-basic.json b/tests/standalone/testcases/35-loan-broker-set/01-basic.json
+new file mode 100644
+index 0000000..e82c78a
+--- /dev/null
++++ b/tests/standalone/testcases/35-loan-broker-set/01-basic.json
+@@ -0,0 +1,14 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanBrokerSet",
++  "VaultID": "A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
++  "ManagementFeeRate": 1000,
++  "DebtMaximum": "0",
++  "CoverRateMinimum": 10000,
++  "CoverRateLiquidation": 50000,
++  "Data": "6465736b2d62726f6b6572"
++}
+diff --git a/tests/standalone/testcases/35-loan-broker-set/01-basic.raw b/tests/standalone/testcases/35-loan-broker-set/01-basic.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..d88936fab6eb1c446bedd4ea816dd4c9d21255b7
+GIT binary patch
+literal 157
+zcmWe)@DdPXexbs^z`(8`&5*c)LBWoJL0v$>o`K<TK!EZ>0wBWys1pcyiWQl*&t2^A
+z8hC1YcG{|nr7_M0b%%Cqzp?xoebrv&(UYio=>^i<DXGQTx=BU(*{Ma1BCLWBYj;?0
+b`zSnlZu*|SrIv3`s{NS`F^++u0muLVBx*eL
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/35-loan-broker-set/01-basic.txt b/tests/standalone/testcases/35-loan-broker-set/01-basic.txt
+new file mode 100644
+index 0000000..32d7fc2
+--- /dev/null
++++ b/tests/standalone/testcases/35-loan-broker-set/01-basic.txt
+@@ -0,0 +1,9 @@
++Transaction Type; Loan Broker Set
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Management Fee Rate; 1 %
++Cover Rate Minimum; 10 %
++Cover Rate Liquidation; 50 %
++Vault ID; a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
++Fee; XRP 0.000012
++Data; desk-broker
++Debt Maximum; 0
+diff --git a/tests/standalone/testcases/36-loan-set/01-first-signer.json b/tests/standalone/testcases/36-loan-set/01-first-signer.json
+new file mode 100644
+index 0000000..13d76a0
+--- /dev/null
++++ b/tests/standalone/testcases/36-loan-set/01-first-signer.json
+@@ -0,0 +1,18 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanSet",
++  "LoanBrokerID": "B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
++  "Counterparty": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "PrincipalRequested": "100000000",
++  "InterestRate": 500,
++  "PaymentTotal": 12,
++  "PaymentInterval": 2592000,
++  "GracePeriod": 604800,
++  "LoanOriginationFee": "100",
++  "LoanServiceFee": "10",
++  "Data": "6c725f30303136"
++}
+diff --git a/tests/standalone/testcases/36-loan-set/01-first-signer.raw b/tests/standalone/testcases/36-loan-set/01-first-signer.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..53e7e9183fe26747faf48d4cd072c2d177fb08b6
+GIT binary patch
+literal 210
+zcmWe)2vA{QU|?5}W=LGYpkU6R-pin1!N6(NpkM<O=TUHEU|{?bpt^|w$Z!Cv1_GX9
+zMW*d@7yG*go|>MWwyI)jjB`QVq21bVEPqB{wO4ucBx+uIfi!zgQM`eHp;@B{tKh@h
+z9oE}E3QwM!zNc@g<=c~Le;TAjzNK$C6>z4UbCJS^FzME(RvvEhD`xUO*tU6j3IoIc
+Q|NlSCLgKuihs5~?0Lso@H2?qr
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/36-loan-set/01-first-signer.txt b/tests/standalone/testcases/36-loan-set/01-first-signer.txt
+new file mode 100644
+index 0000000..44042ae
+--- /dev/null
++++ b/tests/standalone/testcases/36-loan-set/01-first-signer.txt
+@@ -0,0 +1,13 @@
++Transaction Type; Loan Set
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Payment Interval; 2592000 s
++Grace Period; 604800 s
++Payment Total; 12
++Interest Rate; 0.5 %
++Loan Broker ID; b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2
++Fee; XRP 0.000012
++Data; lr_0016
++Counterparty;   rPT1Sjq2YGrB    MTttX4GZHjK     u9dyfzbpAYe   
++Loan Origination Fee; 100
++Loan Service Fee; 10
++Principal Requested; 100000000
+diff --git a/tests/standalone/testcases/36-loan-set/02-all-fields.json b/tests/standalone/testcases/36-loan-set/02-all-fields.json
+new file mode 100644
+index 0000000..71f9df3
+--- /dev/null
++++ b/tests/standalone/testcases/36-loan-set/02-all-fields.json
+@@ -0,0 +1,23 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanSet",
++  "LoanBrokerID": "B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
++  "Counterparty": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "PrincipalRequested": "2500.5",
++  "InterestRate": 1250,
++  "LateInterestRate": 2000,
++  "CloseInterestRate": 300,
++  "OverpaymentInterestRate": 100,
++  "OverpaymentFee": 50,
++  "PaymentTotal": 3,
++  "PaymentInterval": 60,
++  "GracePeriod": 60,
++  "LoanOriginationFee": "1",
++  "LoanServiceFee": "0.25",
++  "LatePaymentFee": "5",
++  "ClosePaymentFee": "2"
++}
+diff --git a/tests/standalone/testcases/36-loan-set/02-all-fields.raw b/tests/standalone/testcases/36-loan-set/02-all-fields.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e5df280efdb670b68c450b6c6ae0b94e0446e52
+GIT binary patch
+literal 250
+zcmWe)2vA{QU|?5}W=LGYpkNMU+bCFoNgE)^tl$77jT9Ui7+4-DH~|%2P;h2oVAN4?
+z0g9&tsBR(vGC=x)fTviIY5Uy8{;q+ire~+Es#qH1Tu^stxAq&$pV3$CRUSQwnwQ=v
+z!YcT%c8B%0kHVAZrtj%nYWeo0+Mfm~k#Ff6P6eDP=Uk+)AxygUsg;MD{EC^p54LSy
+zp2EQJ|NsAYvy?WTIH*(w=DeNlnmn<|<qJe+j`YFYbiWf2&OD{f{S75|9YA_M0s!>L
+BY!d(g
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/36-loan-set/02-all-fields.txt b/tests/standalone/testcases/36-loan-set/02-all-fields.txt
+new file mode 100644
+index 0000000..416a4d2
+--- /dev/null
++++ b/tests/standalone/testcases/36-loan-set/02-all-fields.txt
+@@ -0,0 +1,18 @@
++Transaction Type; Loan Set
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Payment Interval; 60 s
++Grace Period; 60 s
++Payment Total; 3
++Overpayment Fee; 0.05 %
++Interest Rate; 1.25 %
++Late Interest Rate; 2 %
++Close Interest Rate; 0.3 %
++Overpayment Interest Rate; 0.1 %
++Loan Broker ID; b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2
++Fee; XRP 0.000012
++Counterparty;   rPT1Sjq2YGrB    MTttX4GZHjK     u9dyfzbpAYe   
++Loan Origination Fee; 1
++Loan Service Fee; 0.25
++Late Payment Fee; 5
++Close Payment Fee; 2
++Principal Requested; 2500.5
+diff --git a/tests/standalone/testcases/36-loan-set/03-countersigned.json b/tests/standalone/testcases/36-loan-set/03-countersigned.json
+new file mode 100644
+index 0000000..c882c23
+--- /dev/null
++++ b/tests/standalone/testcases/36-loan-set/03-countersigned.json
+@@ -0,0 +1,20 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanSet",
++  "LoanBrokerID": "B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
++  "Counterparty": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "PrincipalRequested": "100000000",
++  "InterestRate": 500,
++  "PaymentTotal": 12,
++  "PaymentInterval": 2592000,
++  "GracePeriod": 604800,
++  "TxnSignature": "30440220111111111111111111111111111111111111111111111111111111111111111102202222222222222222222222222222222222222222222222222222222222222222",
++  "CounterpartySignature": {
++    "SigningPubKey": "ED3333333333333333333333333333333333333333333333333333333333333333",
++    "TxnSignature": "44444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444"
++  }
++}
+diff --git a/tests/standalone/testcases/36-loan-set/03-countersigned.raw b/tests/standalone/testcases/36-loan-set/03-countersigned.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..d2ad03ed85275119a7b3cefcc1d45912b8e05d0f
+GIT binary patch
+literal 350
+zcmWe)2vA{QU|?5}W=LGYpkU6R-pin1!N6(NpkM<O=TUHEU|{?bpt^|w$Z!Cv1_GX9
+zMW*d@7yG*go|>MWwyI)jjB`QVq21bVEPqB{wO4ucBx+uIiJO57lY$@tz@(r=05poQ
+z3O=meVZH66@Z`Dad-|4IzCEe-r$I{OTl$7m0cXlN7b$EAlWu)#<>4m3Vjk~<ZJU>;
+ZFfjc8|Nq+q)ndiB#sol#gA0Y=Apio|Zyo>u
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/36-loan-set/03-countersigned.txt b/tests/standalone/testcases/36-loan-set/03-countersigned.txt
+new file mode 100644
+index 0000000..775c607
+--- /dev/null
++++ b/tests/standalone/testcases/36-loan-set/03-countersigned.txt
+@@ -0,0 +1,12 @@
++Transaction Type; Loan Set
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Payment Interval; 2592000 s
++Grace Period; 604800 s
++Payment Total; 12
++Interest Rate; 0.5 %
++Loan Broker ID; b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2
++Fee; XRP 0.000012
++Txn Sig.; 3044022011111111111111111111111111111111111111111111111111111111111111110220222222222222222222222222222222222222222222222222...
++Counterparty;   rPT1Sjq2YGrB    MTttX4GZHjK     u9dyfzbpAYe   
++Principal Requested; 100000000
++Txn Sig.; 4444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444...
+diff --git a/tests/standalone/testcases/37-loan-pay/01-installment.json b/tests/standalone/testcases/37-loan-pay/01-installment.json
+new file mode 100644
+index 0000000..0eb39be
+--- /dev/null
++++ b/tests/standalone/testcases/37-loan-pay/01-installment.json
+@@ -0,0 +1,10 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanPay",
++  "LoanID": "C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
++  "Amount": "9000000"
++}
+diff --git a/tests/standalone/testcases/37-loan-pay/01-installment.raw b/tests/standalone/testcases/37-loan-pay/01-installment.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..8eed4a375bbe7fd3d4c461bc9834d139d2b4bac4
+GIT binary patch
+literal 123
+zcmWe)2vK2RU|?5}W=LGY5TJIL07!HIs%Gd6amWBO7#Mhp6`8irUF`1~cxrlf+Nz4B
+wG0p{bhjwefvHTf*)n4V%lc;&=jUudq4{LW=Z~G`bd2afizNMCLPpbU^0DfdS;Q#;t
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/37-loan-pay/01-installment.txt b/tests/standalone/testcases/37-loan-pay/01-installment.txt
+new file mode 100644
+index 0000000..6ec4254
+--- /dev/null
++++ b/tests/standalone/testcases/37-loan-pay/01-installment.txt
+@@ -0,0 +1,5 @@
++Transaction Type; Loan Pay
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Loan ID; c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
++Amount; XRP 9
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/37-loan-pay/02-full-payment.json b/tests/standalone/testcases/37-loan-pay/02-full-payment.json
+new file mode 100644
+index 0000000..4b820cd
+--- /dev/null
++++ b/tests/standalone/testcases/37-loan-pay/02-full-payment.json
+@@ -0,0 +1,11 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanPay",
++  "LoanID": "C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
++  "Amount": "95000000",
++  "Flags": 131072
++}
+diff --git a/tests/standalone/testcases/37-loan-pay/02-full-payment.raw b/tests/standalone/testcases/37-loan-pay/02-full-payment.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4294043b883bd3c0b09c81dd63013ad97d78f0f
+GIT binary patch
+literal 128
+zcmWe)2vK5SVqj2VU|?WZkY-3+!4RN!m;gw00IFtPIrTsWhyesV#fnVZ=Pvel4LmhH
+zJ8f0P(irE0x<k9Q-&p>PzG|=X=t<PP^hOa@!H2awthap>o;){wPv26@w<p#9007Rp
+BI_m%c
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/37-loan-pay/02-full-payment.txt b/tests/standalone/testcases/37-loan-pay/02-full-payment.txt
+new file mode 100644
+index 0000000..c84e0bb
+--- /dev/null
++++ b/tests/standalone/testcases/37-loan-pay/02-full-payment.txt
+@@ -0,0 +1,6 @@
++Transaction Type; Loan Pay
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Flags; Full Payment
++Loan ID; c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
++Amount; XRP 95
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/38-loan-manage/01-default.json b/tests/standalone/testcases/38-loan-manage/01-default.json
+new file mode 100644
+index 0000000..05932a4
+--- /dev/null
++++ b/tests/standalone/testcases/38-loan-manage/01-default.json
+@@ -0,0 +1,10 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanManage",
++  "LoanID": "C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
++  "Flags": 65536
++}
+diff --git a/tests/standalone/testcases/38-loan-manage/01-default.raw b/tests/standalone/testcases/38-loan-manage/01-default.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..58c97e9a74cf366cb4223fd188d465bf92dd5a4a
+GIT binary patch
+literal 119
+zcmWe)2vTBTWMEKXU|?WZkY-3+!4RN!m;lId0ICK8o?=C&?Q<9Vy9S<`o}IR;Vrh(X
+tLEWL<+HWj>Mqjm8dGsV|UV5VltKh@h9oE}E3QwM!zNc@g<=c~Le*h#@I79#d
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/38-loan-manage/01-default.txt b/tests/standalone/testcases/38-loan-manage/01-default.txt
+new file mode 100644
+index 0000000..b22a578
+--- /dev/null
++++ b/tests/standalone/testcases/38-loan-manage/01-default.txt
+@@ -0,0 +1,5 @@
++Transaction Type; Loan Manage
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Flags; Default
++Loan ID; c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/38-loan-manage/02-impair.json b/tests/standalone/testcases/38-loan-manage/02-impair.json
+new file mode 100644
+index 0000000..f3cd4b5
+--- /dev/null
++++ b/tests/standalone/testcases/38-loan-manage/02-impair.json
+@@ -0,0 +1,10 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "LoanManage",
++  "LoanID": "C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
++  "Flags": 131072
++}
+diff --git a/tests/standalone/testcases/38-loan-manage/02-impair.raw b/tests/standalone/testcases/38-loan-manage/02-impair.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..ddeb90331aea1d43bddc2ee0940a7c2c0f715699
+GIT binary patch
+literal 119
+zcmWe)2vTBTVqj2VU|?WZkY-3+!4RN!m;lId0ICK8o?=C&?Q<9Vy9S<`o}IR;Vrh(X
+tLEWL<+HWj>Mqjm8dGsV|UV5VltKh@h9oE}E3QwM!zNc@g<=c~Le*h%LI7I*e
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/38-loan-manage/02-impair.txt b/tests/standalone/testcases/38-loan-manage/02-impair.txt
+new file mode 100644
+index 0000000..7574071
+--- /dev/null
++++ b/tests/standalone/testcases/38-loan-manage/02-impair.txt
+@@ -0,0 +1,5 @@
++Transaction Type; Loan Manage
++Account;   rTooLkitCks     h5mQa67eaa2     JaWHDBnHkpy   
++Flags; Impair
++Loan ID; c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
++Fee; XRP 0.000012
+diff --git a/tests/standalone/testcases/blind-sign/05-batch-two-payments.json b/tests/standalone/testcases/blind-sign/05-batch-two-payments.json
+new file mode 100644
+index 0000000..1723671
+--- /dev/null
++++ b/tests/standalone/testcases/blind-sign/05-batch-two-payments.json
+@@ -0,0 +1,35 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "Batch",
++  "Flags": 65536,
++  "RawTransactions": [
++    {
++      "RawTransaction": {
++        "TransactionType": "Payment",
++        "Account": "OWN_ADDR",
++        "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++        "Amount": "1000000",
++        "Fee": "0",
++        "Flags": 1073741824,
++        "Sequence": 8,
++        "SigningPubKey": ""
++      }
++    },
++    {
++      "RawTransaction": {
++        "TransactionType": "Payment",
++        "Account": "OWN_ADDR",
++        "Destination": "rhub8VRN55s94qWKDv6jmDy1pUykJzF3wq",
++        "Amount": "2000000",
++        "Fee": "0",
++        "Flags": 1073741824,
++        "Sequence": 9,
++        "SigningPubKey": ""
++      }
++    }
++  ]
++}
+diff --git a/tests/standalone/testcases/blind-sign/05-batch-two-payments.raw b/tests/standalone/testcases/blind-sign/05-batch-two-payments.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..08a200e8850082927dde19e5add69f9c9f4bc0e3
+GIT binary patch
+literal 248
+zcmWe)a93hrWMEKXU|?WZkY-3+!I0qqWCH<Du_Dv<xr_Z>15ZuQPFq#6G{(80?$B=S
+zH<mx6uiC3TdJ;7+y-|c!@L}x^>un!}C(lja)3?;}?MbyiALJe=2{AAzIRH%o8O)Ig
+zVlnVLIl#<jC}zN}wOQm_`i4^hXUaJjDQpOnZhdOy;U>T0A*y+t5cA|(8i+7Y>o&J#
+X<Tb9m%!%JMA5QEpOr8{E@bDu5+<{e^
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/blind-sign/06-unknown-data-type.json b/tests/standalone/testcases/blind-sign/06-unknown-data-type.json
+new file mode 100644
+index 0000000..95ca59f
+--- /dev/null
++++ b/tests/standalone/testcases/blind-sign/06-unknown-data-type.json
+@@ -0,0 +1,11 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "Payment",
++  "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
++  "Amount": "1000000",
++  "TakerPaysCurrency": "0000000000000000000000005553440000000000"
++}
+diff --git a/tests/standalone/testcases/blind-sign/06-unknown-data-type.raw b/tests/standalone/testcases/blind-sign/06-unknown-data-type.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e48dc392f95740cf2e4ebc51668060c4ee8ceac
+GIT binary patch
+literal 133
+zcmWe)U{GOTU|?5}W=LGYkmvwpGw?e(WPlkA3_Qh(Oxx!!_IC|DH9b3RRmIX6=YqOJ
+zyS3j~{*1nAukz?g)V%aY5mv#6wL7f0eH5NNH+@gvQp>j|)&4Y#d`sVOD&R~x=OTp-
+YVbZNntvuZ1S1<~KEP#Q~U>7hG0Qi0@4*&oF
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/standalone/testcases/blind-sign/07-mpt-issuance-create.json b/tests/standalone/testcases/blind-sign/07-mpt-issuance-create.json
+new file mode 100644
+index 0000000..809c331
+--- /dev/null
++++ b/tests/standalone/testcases/blind-sign/07-mpt-issuance-create.json
+@@ -0,0 +1,12 @@
++{
++  "Account": "OWN_ADDR",
++  "Fee": "12",
++  "Sequence": 7,
++  "LastLedgerSequence": 6400000,
++  "SigningPubKey": "OWN_PUBKEY",
++  "TransactionType": "MPTokenIssuanceCreate",
++  "AssetScale": 2,
++  "MaximumAmount": "1000000000",
++  "TransferFee": 100,
++  "Flags": 32
++}
+diff --git a/tests/standalone/testcases/blind-sign/07-mpt-issuance-create.raw b/tests/standalone/testcases/blind-sign/07-mpt-issuance-create.raw
+new file mode 100644
+index 0000000000000000000000000000000000000000..33cfd452cb98431e979c2941d1f662ba997dcfba
+GIT binary patch
+literal 101
+zcmWe)FcV=&QDR_VP*4F9><ZEhi7OZkB!FxN>shB5G8{lG1_qvDMW*d@7yG*go|>MW
+zwyI)jjB`QVq21bVEPqB{wO4ucBx+uIqX?_u!`dCz+dc|Uo}0d>Z>i<mlWKoh1(*N>
+CD<S6q
+
+literal 0
+HcmV?d00001
+
+diff --git a/unit-tests/src/test_tx.c b/unit-tests/src/test_tx.c
+index a2b94e5..90b933d 100644
+--- a/unit-tests/src/test_tx.c
++++ b/unit-tests/src/test_tx.c
+@@ -133,6 +133,47 @@ static const char* testcases[] = {
+     "../../tests/standalone/testcases/28-amm-bid/01-basic.raw",
+     "../../tests/standalone/testcases/28-amm-bid/02-min-max.raw",
+     "../../tests/standalone/testcases/29-amm-vote/01-basic.raw",
++    // XRPL 3.x: Credentials, DelegateSet, Single Asset Vault (XLS-65),
++    // Lending Protocol (XLS-66). Generated with xrpl-py 5.2 from the .json
++    // next to each .raw.
++    "../../tests/standalone/testcases/30-credential-create/01-basic.raw",
++    "../../tests/standalone/testcases/31-delegate-set/"
++    "01-payment-trustset-granular.raw",
++    "../../tests/standalone/testcases/32-vault-create/"
++    "01-closed-ended-private.raw",
++    "../../tests/standalone/testcases/32-vault-create/02-iou-asset.raw",
++    "../../tests/standalone/testcases/32-vault-create/03-mpt-asset.raw",
++    "../../tests/standalone/testcases/33-vault-deposit/01-xrp.raw",
++    "../../tests/standalone/testcases/33-vault-deposit/02-iou.raw",
++    "../../tests/standalone/testcases/33-vault-deposit/03-mpt.raw",
++    "../../tests/standalone/testcases/34-vault-withdraw/"
++    "01-destination-credentials.raw",
++    "../../tests/standalone/testcases/35-loan-broker-set/01-basic.raw",
++    "../../tests/standalone/testcases/36-loan-set/01-first-signer.raw",
++    "../../tests/standalone/testcases/36-loan-set/02-all-fields.raw",
++    "../../tests/standalone/testcases/36-loan-set/03-countersigned.raw",
++    "../../tests/standalone/testcases/37-loan-pay/01-installment.raw",
++    "../../tests/standalone/testcases/37-loan-pay/02-full-payment.raw",
++    "../../tests/standalone/testcases/38-loan-manage/01-default.raw",
++    "../../tests/standalone/testcases/38-loan-manage/02-impair.raw",
++    NULL,
++};
++
++// Transactions that must parse without error but end in the blind-signing
++// flow (parse_tx returns BLIND_SIGN_REQUIRED), never in a normal review and
++// never in an APDU error.
++static const char* blind_sign_testcases[] = {
++    // Unknown transaction type (EnableAmendment).
++    "../../tests/standalone/testcases/blind-sign/02-unknown-tx-type.raw",
++    // Batch: each inner transaction carries a nested TransactionType.
++    "../../tests/standalone/testcases/blind-sign/05-batch-two-payments.raw",
++    // A field of a data type (Hash160) the parser has no reader for.
++    // Before unknown data types fell through to blind signing, this was
++    // rejected with 0x6800 | NOT_SUPPORTED, the same path every LoanSet hit
++    // on its STNumber PrincipalRequested field.
++    "../../tests/standalone/testcases/blind-sign/06-unknown-data-type.raw",
++    // Named but deliberately not clear-signed.
++    "../../tests/standalone/testcases/blind-sign/07-mpt-issuance-create.raw",
+     NULL,
+ };
+ 
+@@ -336,10 +377,29 @@ void test_invalid_transactions(void** state) {
+     }
+ }
+ 
++void test_blind_sign_transactions(void** state) {
++    (void)state;
++
++    for (const char** testcase = blind_sign_testcases; *testcase != NULL;
++         testcase++) {
++        printf("[*] %s\n", *testcase);
++        size_t size;
++        uint8_t* data = load_transaction_data(*testcase, &size);
++
++        memset(&parse_context, 0, sizeof(parse_context));
++        parse_context.data = data;
++        parse_context.length = size;
++        assert_int_equal(parse_tx(&parse_context), BLIND_SIGN_REQUIRED);
++
++        free(data);
++    }
++}
++
+ int main() {
+     const struct CMUnitTest tests[] = {
+         cmocka_unit_test(test_transactions),
+         cmocka_unit_test(test_invalid_transactions),
++        cmocka_unit_test(test_blind_sign_transactions),
+     };
+     return cmocka_run_group_tests(tests, NULL, NULL);
+ }
