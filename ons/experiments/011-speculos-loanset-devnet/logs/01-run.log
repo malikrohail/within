@@ -1,0 +1,40 @@
+device (Speculos, 44'/144'/0'/0/0): ra7Zr8ddy9tB88RaXL8B87YkqhEJG2vkAJ pubkey 038368B6F1151E0CD559126AE13910B8B8D790652EB5CC0B5019A63D2E60792961
+broker rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas  depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe
+  submit 1 VaultCreate: tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  1 VaultCreate: tesSUCCESS 734D13842DE7054C8BD45AB142074AD404549BAA697E76D9C2A4024A6CD4AC9F
+  submit 2 VaultDeposit: tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  2 VaultDeposit: tesSUCCESS 01F355141F93AB8C4ADA9CE2C8BB8558ED598CF44C05AD3394E5114044A2403F
+  submit 3 LoanBrokerSet: tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  3 LoanBrokerSet: tesSUCCESS B2907620EFF67C12B4B8CBAAF1EAADCC427EF47DDC2CE6072AD7DC90A68F07BC
+  submit 4 LoanBrokerCoverDeposit: tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  4 LoanBrokerCoverDeposit: tesSUCCESS 95651B170BE5E4979E13CBAE203B14D6AABA5BF9FDBBFCFD5BED29EAFDF57C52
+  waiting for Investment phase: ledger close_time 846197301 -> 846197331 (30s)
+  waiting for Investment phase: ledger close_time 846197311 -> 846197331 (20s)
+  waiting for Investment phase: ledger close_time 846197322 -> 846197331 (9s)
+
+[5] LoanSet: the device signs as the borrower (Account)
+  [loan-set] 213 bytes to the device; LastLedgerSequence=6389986
+    page 1: ['XRP', 'This app enables signing', 'transactions on the XRP', 'network.', 'Quit app']
+    page 2: ['Transaction Type', 'Loan Set', 'Account', 'ra7Zr8ddy9tB88RaXL8', 'B87YkqhEJG2vkAJ', 'Payment Interval', '60 s', 'Grace Period', '60 s', 'Payment Total', '3', 'Reject', '2 of 5']
+    page 3: ['Interest Rate', '10 %', 'Loan Broker ID', '073bfa96f424136cc8', '7c17d31da4a3feacc8e', 'c392011102aafad9cae', '1a7bc74c', 'Fee', 'XRP 0.0002', 'Reject', '3 of 5']
+    page 4: ['Counterparty', 'rfWhYXgxaxmoaUcsN', 'TnvHSqmFFWckQgya', 's', 'Loan Origination Fee', '100000', 'Loan Service Fee', '10000', 'Close Payment Fee', '10000', 'Principal Requested', '10000000', 'Reject', '4 of 5']
+    page 5: ['Sign transaction?', 'Reject', '5 of 5', 'Hold to sign']
+    after sign: ['Transaction signed']
+  [loan-set] device signature verifies against the Account key: True
+  submit 5 LoanSet (device-signed Account, broker CounterpartySignature): tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  5 LoanSet (device-signed Account, broker CounterpartySignature): tesSUCCESS 0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243
+  Loan: {"Borrower": "ra7Zr8ddy9tB88RaXL8B87YkqhEJG2vkAJ", "PrincipalOutstanding": "10000000", "PeriodicPayment": "3333334.601718946356", "PaymentRemaining": 3, "LoanServiceFee": "10000", "Flags": 0}
+
+[6] LoanPay 3343335 drops: the device signs alone
+  [loan-pay] 123 bytes to the device; LastLedgerSequence=6389990
+    page 1: ['XRP', 'This app enables signing', 'transactions on the XRP', 'network.', 'Quit app']
+    page 2: ['Transaction Type', 'Loan Pay', 'Account', 'ra7Zr8ddy9tB88RaXL8', 'B87YkqhEJG2vkAJ', 'Loan ID', 'cbd1491e954079e775', '5d58439291a53b6ea', '4c06491fd154b6dadd', '52761752563', 'Amount', 'XRP 3.343335', 'Reject', '2 of 4']
+    page 3: ['Fee', 'XRP 0.0002', 'Reject', '3 of 4']
+    page 4: ['Sign transaction?', 'Reject', '4 of 4', 'Hold to sign']
+    after sign: ['Transaction signed']
+  [loan-pay] device signature verifies against the Account key: True
+  submit 6 LoanPay (device-signed, single signature): tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  6 LoanPay (device-signed, single signature): tesSUCCESS 4B531D0B37124F41404EF8AA5359B5A8A433DA8DA507B23E5F6EE134D206644F
+  Loan after pay: {"PrincipalOutstanding": "6666668", "PaymentRemaining": 2, "NextPaymentDueDate": 846197472}
+
+done; run-log.json written

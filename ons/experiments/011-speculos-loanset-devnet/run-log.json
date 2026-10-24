@@ -1,0 +1,91 @@
+[
+  {
+    "device_account": "ra7Zr8ddy9tB88RaXL8B87YkqhEJG2vkAJ",
+    "device_pubkey": "038368B6F1151E0CD559126AE13910B8B8D790652EB5CC0B5019A63D2E60792961",
+    "path": "44'/144'/0'/0/0",
+    "broker": "rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas",
+    "depositor": "rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe",
+    "app": "app-xrp 2.8.2 + experiment 005 patch, Stax, API level 27, Speculos 0.27.1",
+    "started": "2026-10-24T18:47:52-0400"
+  },
+  {
+    "step": "1 VaultCreate",
+    "result": "tesSUCCESS",
+    "hash": "734D13842DE7054C8BD45AB142074AD404549BAA697E76D9C2A4024A6CD4AC9F",
+    "explorer": "https://devnet.xrpl.org/transactions/734D13842DE7054C8BD45AB142074AD404549BAA697E76D9C2A4024A6CD4AC9F",
+    "submit_engine_result": "tesSUCCESS",
+    "vault_id": "36335A63372EAD9544A6226761464AD310CFF0D5E79EB765DF12350735CBBA34"
+  },
+  {
+    "step": "2 VaultDeposit",
+    "result": "tesSUCCESS",
+    "hash": "01F355141F93AB8C4ADA9CE2C8BB8558ED598CF44C05AD3394E5114044A2403F",
+    "explorer": "https://devnet.xrpl.org/transactions/01F355141F93AB8C4ADA9CE2C8BB8558ED598CF44C05AD3394E5114044A2403F",
+    "submit_engine_result": "tesSUCCESS"
+  },
+  {
+    "step": "3 LoanBrokerSet",
+    "result": "tesSUCCESS",
+    "hash": "B2907620EFF67C12B4B8CBAAF1EAADCC427EF47DDC2CE6072AD7DC90A68F07BC",
+    "explorer": "https://devnet.xrpl.org/transactions/B2907620EFF67C12B4B8CBAAF1EAADCC427EF47DDC2CE6072AD7DC90A68F07BC",
+    "submit_engine_result": "tesSUCCESS",
+    "loan_broker_id": "073BFA96F424136CC87C17D31DA4A3FEACC8EC392011102AAFAD9CAE1A7BC74C"
+  },
+  {
+    "step": "4 LoanBrokerCoverDeposit",
+    "result": "tesSUCCESS",
+    "hash": "95651B170BE5E4979E13CBAE203B14D6AABA5BF9FDBBFCFD5BED29EAFDF57C52",
+    "explorer": "https://devnet.xrpl.org/transactions/95651B170BE5E4979E13CBAE203B14D6AABA5BF9FDBBFCFD5BED29EAFDF57C52",
+    "submit_engine_result": "tesSUCCESS"
+  },
+  {
+    "step": "5 LoanSet (device-signed Account, broker CounterpartySignature)",
+    "result": "tesSUCCESS",
+    "hash": "0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243",
+    "explorer": "https://devnet.xrpl.org/transactions/0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243",
+    "submit_engine_result": "tesSUCCESS",
+    "device_signed_blob_sha256": "C8687A3CB2C87E62B8373E7328313BBAE05491D40A9017DD7231CB279C69A78A",
+    "tx_json_before_counterparty": {
+      "Account": "ra7Zr8ddy9tB88RaXL8B87YkqhEJG2vkAJ",
+      "TransactionType": "LoanSet",
+      "Fee": "200",
+      "Sequence": 6383142,
+      "LastLedgerSequence": 6389986,
+      "SigningPubKey": "038368B6F1151E0CD559126AE13910B8B8D790652EB5CC0B5019A63D2E60792961",
+      "LoanBrokerID": "073BFA96F424136CC87C17D31DA4A3FEACC8EC392011102AAFAD9CAE1A7BC74C",
+      "Counterparty": "rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas",
+      "LoanOriginationFee": "100000",
+      "LoanServiceFee": "10000",
+      "ClosePaymentFee": "10000",
+      "InterestRate": 10000,
+      "PrincipalRequested": "10000000",
+      "PaymentTotal": 3,
+      "PaymentInterval": 60,
+      "GracePeriod": 60,
+      "TxnSignature": "304402204448B334F9DA54A2590656E15AE5780EA583E3E9FB34A6E3BBB30E3E46CA8CAA02207467A4915E7D0EE25AC7EAB85F69602461A78B4A4AFCC4CAD0B02A78C5FADFE6"
+    },
+    "loan_id": "CBD1491E954079E7755D58439291A53B6EA4C06491FD154B6DADD52761752563"
+  },
+  {
+    "step": "6 LoanPay (device-signed, single signature)",
+    "result": "tesSUCCESS",
+    "hash": "4B531D0B37124F41404EF8AA5359B5A8A433DA8DA507B23E5F6EE134D206644F",
+    "explorer": "https://devnet.xrpl.org/transactions/4B531D0B37124F41404EF8AA5359B5A8A433DA8DA507B23E5F6EE134D206644F",
+    "submit_engine_result": "tesSUCCESS",
+    "tx_json": {
+      "Account": "ra7Zr8ddy9tB88RaXL8B87YkqhEJG2vkAJ",
+      "TransactionType": "LoanPay",
+      "Fee": "200",
+      "Sequence": 6383143,
+      "LastLedgerSequence": 6389990,
+      "SigningPubKey": "038368B6F1151E0CD559126AE13910B8B8D790652EB5CC0B5019A63D2E60792961",
+      "LoanID": "CBD1491E954079E7755D58439291A53B6EA4C06491FD154B6DADD52761752563",
+      "Amount": "3343335",
+      "TxnSignature": "30450221008D92B1F3A33B527620BF541DAD428D48F68F88EA1AFDBDEFF2FE302075482A6302205539F9FAB0A9509A822E6E12D0B691C733DA0FB0963D7838C3A148A87CCBA409"
+    }
+  },
+  {
+    "finished": "2026-10-24T18:49:27-0400",
+    "device_balance_drops": 59556259
+  }
+]
