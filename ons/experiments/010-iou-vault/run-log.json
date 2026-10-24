@@ -1,0 +1,401 @@
+[
+  {
+    "step": "2a VaultCreate before DefaultRipple",
+    "result": "terNO_RIPPLE",
+    "hash": null,
+    "explorer": null,
+    "engine_result_message": "Path does not permit rippling."
+  },
+  {
+    "step": "2b AccountSet asfDefaultRipple (issuer)",
+    "result": "tesSUCCESS",
+    "hash": "0920735783E036A2A20D9374E83CB8C93D3A4D074C1840F8407A7211C532B954",
+    "explorer": "https://devnet.xrpl.org/transactions/0920735783E036A2A20D9374E83CB8C93D3A4D074C1840F8407A7211C532B954"
+  },
+  {
+    "step": "3 TrustSet depositor",
+    "result": "tesSUCCESS",
+    "hash": "CB6A78AE1B2F6DD38A673AEBD8FD79209387A78FA19B85028D0A97902974F792",
+    "explorer": "https://devnet.xrpl.org/transactions/CB6A78AE1B2F6DD38A673AEBD8FD79209387A78FA19B85028D0A97902974F792"
+  },
+  {
+    "step": "3 Payment issuer -> depositor 1000 USD",
+    "result": "tesSUCCESS",
+    "hash": "FC1B4A6FF84259184ABA7B812F437D80D0FD82FE6E003069965D82C99C55E53C",
+    "explorer": "https://devnet.xrpl.org/transactions/FC1B4A6FF84259184ABA7B812F437D80D0FD82FE6E003069965D82C99C55E53C"
+  },
+  {
+    "step": "3 TrustSet broker",
+    "result": "tesSUCCESS",
+    "hash": "7A7EDCC8B9A5BF43BA655B0528B999C8FFC276176DED16960EE8EBF356986C81",
+    "explorer": "https://devnet.xrpl.org/transactions/7A7EDCC8B9A5BF43BA655B0528B999C8FFC276176DED16960EE8EBF356986C81"
+  },
+  {
+    "step": "3 Payment issuer -> broker 100 USD",
+    "result": "tesSUCCESS",
+    "hash": "5700369E0AAB6686304E08F45113826905D0F02ED4E87FBB53FBB97BADAA3C62",
+    "explorer": "https://devnet.xrpl.org/transactions/5700369E0AAB6686304E08F45113826905D0F02ED4E87FBB53FBB97BADAA3C62"
+  },
+  {
+    "step": "3 TrustSet borrower",
+    "result": "tesSUCCESS",
+    "hash": "D922F9739D8313134488B5615931C0F97F3ABD0031C162233BA4239910B7060F",
+    "explorer": "https://devnet.xrpl.org/transactions/D922F9739D8313134488B5615931C0F97F3ABD0031C162233BA4239910B7060F"
+  },
+  {
+    "step": "3 Payment issuer -> borrower 50 USD",
+    "result": "tesSUCCESS",
+    "hash": "79E3038C24B28484BF1ED052FFEB4D3D32A76E61AE756E192F66AE8415744C84",
+    "explorer": "https://devnet.xrpl.org/transactions/79E3038C24B28484BF1ED052FFEB4D3D32A76E61AE756E192F66AE8415744C84"
+  },
+  {
+    "step": "4 VaultCreate (IOU)",
+    "result": "tesSUCCESS",
+    "hash": "81111F71839C555FA96B0173A7C7ED3A6B0DF99B9741D85EF7E45A433857E302",
+    "explorer": "https://devnet.xrpl.org/transactions/81111F71839C555FA96B0173A7C7ED3A6B0DF99B9741D85EF7E45A433857E302",
+    "vault_id": "753D271A792889E31DDED7B3FD68371B121BF6365B709FAEF73497D481A9EC47",
+    "share_mpt_id": "000000017DFF4744C05A826E982500E7916C0B16AE49CC4A",
+    "vault": {
+      "Account": "rUVDHptHWCeEkxzpfwXPjBr9MANmjUJifx",
+      "Asset": {
+        "currency": "USD",
+        "issuer": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu"
+      },
+      "Data": "303130",
+      "Flags": 0,
+      "LEVersion": 1,
+      "LedgerEntryType": "Vault",
+      "Owner": "rKZuhbJfv25D137Rje9ioxkSDiVkC7HbRK",
+      "OwnerNode": "0",
+      "PreviousTxnID": "81111F71839C555FA96B0173A7C7ED3A6B0DF99B9741D85EF7E45A433857E302",
+      "PreviousTxnLgrSeq": 6387057,
+      "RedemptionDate": 846188440,
+      "Scale": 6,
+      "Sequence": 6387031,
+      "ShareMPTID": "000000017DFF4744C05A826E982500E7916C0B16AE49CC4A",
+      "SubscriptionDate": 846187540,
+      "VaultKind": 1,
+      "WithdrawalPolicy": 1,
+      "index": "753D271A792889E31DDED7B3FD68371B121BF6365B709FAEF73497D481A9EC47"
+    },
+    "pseudo_lines": [
+      {
+        "account": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu",
+        "balance": "0",
+        "currency": "USD",
+        "limit": "0",
+        "limit_peer": "0",
+        "no_ripple": true,
+        "quality_in": 0,
+        "quality_out": 0
+      }
+    ],
+    "created_nodes": [
+      "MPTokenIssuance",
+      "Vault",
+      "AccountRoot",
+      "DirectoryNode",
+      "RippleState",
+      "MPToken"
+    ]
+  },
+  {
+    "step": "5a VaultDeposit",
+    "result": "tesSUCCESS",
+    "hash": "2A484A418566F723CA8770A615F56702473E6D5C9408EECFD1B7FA6F5B45855A",
+    "explorer": "https://devnet.xrpl.org/transactions/2A484A418566F723CA8770A615F56702473E6D5C9408EECFD1B7FA6F5B45855A",
+    "pseudo_lines_after_deposit": [
+      {
+        "account": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu",
+        "balance": "500",
+        "currency": "USD",
+        "limit": "0",
+        "limit_peer": "0",
+        "no_ripple": true,
+        "quality_in": 0,
+        "quality_out": 0
+      }
+    ],
+    "share_mpt": {
+      "OutstandingAmount": "500000000",
+      "AssetScale": 6,
+      "Flags": 56,
+      "Issuer": "rUVDHptHWCeEkxzpfwXPjBr9MANmjUJifx"
+    }
+  },
+  {
+    "step": "5b LoanBrokerSet",
+    "result": "tesSUCCESS",
+    "hash": "4FEEFA44CDE51EDC6658967C5B98D9874E7BF955707D173126C687DB9BA56D84",
+    "explorer": "https://devnet.xrpl.org/transactions/4FEEFA44CDE51EDC6658967C5B98D9874E7BF955707D173126C687DB9BA56D84",
+    "loan_broker_id": "339C05F14786FA737B423008F72813D0AA51395B7B107E37F87DAD9F36359211"
+  },
+  {
+    "step": "5c LoanBrokerCoverDeposit",
+    "result": "tesSUCCESS",
+    "hash": "6E224760B4ACA8B02A4869409AFC9EBFC83CB11C16C4927DB2C56F8B7D599E61",
+    "explorer": "https://devnet.xrpl.org/transactions/6E224760B4ACA8B02A4869409AFC9EBFC83CB11C16C4927DB2C56F8B7D599E61",
+    "loan_broker": {
+      "Account": "rNz6XC2jrzPbsm8tiVz8ubU9edp4H7KEA",
+      "CoverAvailable": "50",
+      "CoverRateLiquidation": 50000,
+      "CoverRateMinimum": 10000,
+      "Data": "303130",
+      "DebtMaximum": "200",
+      "Flags": 0,
+      "LedgerEntryType": "LoanBroker",
+      "LoanSequence": 1,
+      "ManagementFeeRate": 1000,
+      "Owner": "rKZuhbJfv25D137Rje9ioxkSDiVkC7HbRK",
+      "OwnerNode": "0",
+      "PreviousTxnID": "6E224760B4ACA8B02A4869409AFC9EBFC83CB11C16C4927DB2C56F8B7D599E61",
+      "PreviousTxnLgrSeq": 6387064,
+      "Sequence": 6387032,
+      "VaultID": "753D271A792889E31DDED7B3FD68371B121BF6365B709FAEF73497D481A9EC47",
+      "VaultNode": "0",
+      "index": "339C05F14786FA737B423008F72813D0AA51395B7B107E37F87DAD9F36359211"
+    },
+    "broker_pseudo_lines": [
+      {
+        "account": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu",
+        "balance": "50",
+        "currency": "USD",
+        "limit": "0",
+        "limit_peer": "0",
+        "no_ripple": true,
+        "quality_in": 0,
+        "quality_out": 0
+      }
+    ]
+  },
+  {
+    "step": "6 LoanSet",
+    "result": "tesSUCCESS",
+    "hash": "136604FF9F893C7D0582A69EEF0BF9EC116076832007AF0BAE96374F23F6FCBD",
+    "explorer": "https://devnet.xrpl.org/transactions/136604FF9F893C7D0582A69EEF0BF9EC116076832007AF0BAE96374F23F6FCBD",
+    "submit_engine_result": "tesSUCCESS",
+    "engine_result_message": "The transaction was applied. Only final in a validated ledger.",
+    "loan_id": "7AF38579FF85F25F4CC65DB1D0ABEABCE079104B8E892397B11366017D7A2B64",
+    "loan": {
+      "Borrower": "rZF3jeQrj5NVuzeiL5s7QSh1KqyvUQACb",
+      "PrincipalOutstanding": "100",
+      "TotalValueOutstanding": "100.0000380515684",
+      "PeriodicPayment": "33.33334601718946356",
+      "PaymentRemaining": 3,
+      "NextPaymentDueDate": 846187612,
+      "StartDate": 846187552,
+      "PaymentInterval": 60,
+      "InterestRate": 10000,
+      "LoanOriginationFee": "0.1",
+      "LoanServiceFee": "0.01",
+      "ClosePaymentFee": "0.02",
+      "LoanScale": -13,
+      "Flags": 0
+    },
+    "borrower_lines_after": [
+      {
+        "account": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu",
+        "balance": "149.9",
+        "currency": "USD",
+        "limit": "1000000",
+        "limit_peer": "0",
+        "quality_in": 0,
+        "quality_out": 0
+      }
+    ]
+  },
+  {
+    "step": "6a LoanPay installment",
+    "result": "tesSUCCESS",
+    "hash": "0B8ECC7A6CD44A38A977E8037E383A0B7F84917B339756A06CA33E5B39F75059",
+    "explorer": "https://devnet.xrpl.org/transactions/0B8ECC7A6CD44A38A977E8037E383A0B7F84917B339756A06CA33E5B39F75059",
+    "loan_after": {
+      "Borrower": "rZF3jeQrj5NVuzeiL5s7QSh1KqyvUQACb",
+      "PrincipalOutstanding": "66.6666730085771",
+      "TotalValueOutstanding": "66.6666920343789",
+      "PeriodicPayment": "33.33334601718946356",
+      "PaymentRemaining": 2,
+      "NextPaymentDueDate": 846187672,
+      "StartDate": 846187552,
+      "PaymentInterval": 60,
+      "InterestRate": 10000,
+      "LoanOriginationFee": "0.1",
+      "LoanServiceFee": "0.01",
+      "ClosePaymentFee": "0.02",
+      "LoanScale": -13,
+      "Flags": 0
+    }
+  },
+  {
+    "step": "6b LoanPay full payoff (tfLoanFullPayment)",
+    "result": "tesSUCCESS",
+    "hash": "913BE492954A87CDE79E971C72B4944F85F00CBA4073A42C9BB66DC59F4314C5",
+    "explorer": "https://devnet.xrpl.org/transactions/913BE492954A87CDE79E971C72B4944F85F00CBA4073A42C9BB66DC59F4314C5",
+    "loan_after": {
+      "Borrower": "rZF3jeQrj5NVuzeiL5s7QSh1KqyvUQACb",
+      "PrincipalOutstanding": null,
+      "TotalValueOutstanding": null,
+      "PeriodicPayment": "33.33334601718946356",
+      "PaymentRemaining": null,
+      "NextPaymentDueDate": null,
+      "StartDate": 846187552,
+      "PaymentInterval": 60,
+      "InterestRate": 10000,
+      "LoanOriginationFee": "0.1",
+      "LoanServiceFee": "0.01",
+      "ClosePaymentFee": "0.02",
+      "LoanScale": -13,
+      "Flags": 0
+    }
+  },
+  {
+    "step": "6c LoanDelete (broker owner)",
+    "result": "tesSUCCESS",
+    "hash": "A8A4B6C4094C8AAF6301E29647B4A06A8DF2A3476A97C55567F6230C2BB332F1",
+    "explorer": "https://devnet.xrpl.org/transactions/A8A4B6C4094C8AAF6301E29647B4A06A8DF2A3476A97C55567F6230C2BB332F1"
+  },
+  {
+    "step": "7p LoanSet",
+    "result": "tesSUCCESS",
+    "hash": "9E3F464E5EE6A2845B08BEBED30199DE46C3B5D6503A7B06503EBD3C03A57EBB",
+    "explorer": "https://devnet.xrpl.org/transactions/9E3F464E5EE6A2845B08BEBED30199DE46C3B5D6503A7B06503EBD3C03A57EBB",
+    "submit_engine_result": "tesSUCCESS",
+    "engine_result_message": "The transaction was applied. Only final in a validated ledger.",
+    "loan_id": "F1CE6CC7CF50C01A33A4CBEE2C31A129DAB87C4ADEB48A238BD5ECC7DA09D077",
+    "loan": {
+      "Borrower": "rJFQSzApX3ageSPPfHHheBfshKc59HcH1T",
+      "PrincipalOutstanding": "1",
+      "TotalValueOutstanding": "1.0000003805157",
+      "PeriodicPayment": "0.3333334601718946356",
+      "PaymentRemaining": 3,
+      "NextPaymentDueDate": 846187650,
+      "StartDate": 846187590,
+      "PaymentInterval": 60,
+      "InterestRate": 10000,
+      "LoanOriginationFee": "0.1",
+      "LoanServiceFee": "0.01",
+      "ClosePaymentFee": "0.02",
+      "LoanScale": -13,
+      "Flags": 0
+    },
+    "borrower_lines_after": [
+      {
+        "account": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu",
+        "balance": "0.9",
+        "currency": "USD",
+        "limit": "0",
+        "limit_peer": "0",
+        "no_ripple": true,
+        "quality_in": 0,
+        "quality_out": 0
+      }
+    ]
+  },
+  {
+    "step": "7pa LoanPay installment",
+    "result": "tesSUCCESS",
+    "hash": "1437AFBCF71C797AABBDAE13562221A6AAF2288EFFDE0833F6B244AFE4AF647C",
+    "explorer": "https://devnet.xrpl.org/transactions/1437AFBCF71C797AABBDAE13562221A6AAF2288EFFDE0833F6B244AFE4AF647C",
+    "loan_after": {
+      "Borrower": "rJFQSzApX3ageSPPfHHheBfshKc59HcH1T",
+      "PrincipalOutstanding": "0.6666667300858",
+      "TotalValueOutstanding": "0.6666669203438",
+      "PeriodicPayment": "0.3333334601718946356",
+      "PaymentRemaining": 2,
+      "NextPaymentDueDate": 846187710,
+      "StartDate": 846187590,
+      "PaymentInterval": 60,
+      "InterestRate": 10000,
+      "LoanOriginationFee": "0.1",
+      "LoanServiceFee": "0.01",
+      "ClosePaymentFee": "0.02",
+      "LoanScale": -13,
+      "Flags": 0
+    }
+  },
+  {
+    "step": "7pb LoanPay full payoff (tfLoanFullPayment)",
+    "result": "EXCEPTION: Transaction failed: tecINSUFFICIENT_FUNDS",
+    "hash": null,
+    "explorer": null,
+    "loan_after": {
+      "Borrower": "rJFQSzApX3ageSPPfHHheBfshKc59HcH1T",
+      "PrincipalOutstanding": "0.6666667300858",
+      "TotalValueOutstanding": "0.6666669203438",
+      "PeriodicPayment": "0.3333334601718946356",
+      "PaymentRemaining": 2,
+      "NextPaymentDueDate": 846187710,
+      "StartDate": 846187590,
+      "PaymentInterval": 60,
+      "InterestRate": 10000,
+      "LoanOriginationFee": "0.1",
+      "LoanServiceFee": "0.01",
+      "ClosePaymentFee": "0.02",
+      "LoanScale": -13,
+      "Flags": 0
+    }
+  },
+  {
+    "step": "7 final",
+    "vault": {
+      "Account": "rUVDHptHWCeEkxzpfwXPjBr9MANmjUJifx",
+      "Asset": {
+        "currency": "USD",
+        "issuer": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu"
+      },
+      "AssetsAvailable": "499.3333522937784",
+      "AssetsTotal": "500.0000190238642",
+      "Data": "303130",
+      "Flags": 0,
+      "LEVersion": 1,
+      "LedgerEntryType": "Vault",
+      "Owner": "rKZuhbJfv25D137Rje9ioxkSDiVkC7HbRK",
+      "OwnerNode": "0",
+      "PreviousTxnID": "1437AFBCF71C797AABBDAE13562221A6AAF2288EFFDE0833F6B244AFE4AF647C",
+      "PreviousTxnLgrSeq": 6387110,
+      "RedemptionDate": 846188440,
+      "Scale": 6,
+      "Sequence": 6387031,
+      "ShareMPTID": "000000017DFF4744C05A826E982500E7916C0B16AE49CC4A",
+      "SubscriptionDate": 846187540,
+      "VaultKind": 1,
+      "WithdrawalPolicy": 1,
+      "index": "753D271A792889E31DDED7B3FD68371B121BF6365B709FAEF73497D481A9EC47"
+    },
+    "loan_broker": {
+      "Account": "rNz6XC2jrzPbsm8tiVz8ubU9edp4H7KEA",
+      "CoverAvailable": "50",
+      "CoverRateLiquidation": 50000,
+      "CoverRateMinimum": 10000,
+      "Data": "303130",
+      "DebtMaximum": "200",
+      "DebtTotal": "0.6666667300858",
+      "Flags": 0,
+      "LedgerEntryType": "LoanBroker",
+      "LoanSequence": 3,
+      "ManagementFeeRate": 1000,
+      "Owner": "rKZuhbJfv25D137Rje9ioxkSDiVkC7HbRK",
+      "OwnerCount": 1,
+      "OwnerNode": "0",
+      "PreviousTxnID": "1437AFBCF71C797AABBDAE13562221A6AAF2288EFFDE0833F6B244AFE4AF647C",
+      "PreviousTxnLgrSeq": 6387110,
+      "Sequence": 6387032,
+      "VaultID": "753D271A792889E31DDED7B3FD68371B121BF6365B709FAEF73497D481A9EC47",
+      "VaultNode": "0",
+      "index": "339C05F14786FA737B423008F72813D0AA51395B7B107E37F87DAD9F36359211"
+    },
+    "main_loan_id": "7AF38579FF85F25F4CC65DB1D0ABEABCE079104B8E892397B11366017D7A2B64"
+  },
+  {
+    "step": "8a VaultWithdraw deposit",
+    "result": "tesSUCCESS",
+    "hash": "816F7E173D71A87EC02C77D195D766144B2352719DE394DB79566EA73A513F34",
+    "explorer": "https://devnet.xrpl.org/transactions/816F7E173D71A87EC02C77D195D766144B2352719DE394DB79566EA73A513F34"
+  },
+  {
+    "step": "8b VaultWithdraw remainder 0.0000200000008",
+    "result": "tesSUCCESS",
+    "hash": "AB725FE883012D863E49F7BDB78265B38EA024FF487061EA104FD26879718B3C",
+    "explorer": "https://devnet.xrpl.org/transactions/AB725FE883012D863E49F7BDB78265B38EA024FF487061EA104FD26879718B3C"
+  }
+]

@@ -1,0 +1,88 @@
+[1] loaded wallets from experiments/.secrets/001.json
+  funding depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe via faucet (balance 100.000000 XRP)
+  funding depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe via faucet (balance 200.000000 XRP)
+  depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe  300.000000 XRP
+  funding broker rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas via faucet (balance 0.000000 XRP)
+  broker    rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas  100.000000 XRP
+  funding borrower rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L via faucet (balance 0.000000 XRP)
+  borrower  rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L  100.000000 XRP
+
+Starting balances
+  depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe  300.000000 XRP
+  broker    rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas  100.000000 XRP
+  borrower  rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L  100.000000 XRP
+
+  SubscriptionDate=846173711 RedemptionDate=846174311 (ripple epoch; now 846173592)
+
+[2 VaultCreate] VaultCreate from rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas
+  -> tesSUCCESS  hash=DF80A8B517E321E4CF56D0FACBE0ABF2B840DFE915EF0829C4095C6391D00FF7
+     https://devnet.xrpl.org/transactions/DF80A8B517E321E4CF56D0FACBE0ABF2B840DFE915EF0829C4095C6391D00FF7
+  VaultID      = C08AD6CA2CB458EC9C09A4D63AEC91B1A0B4E6A0F3D2E3B623277BA027C443F1
+  ShareMPTID   = 000000015FFCE1506D68CD6DF922B1ED5CA11103C73D4C54
+  pseudo acct  = r9kY3eLs11EXEq3ksAxxAzGeYairRrYATX  Flags=0 VaultKind=1
+
+[3 VaultDeposit] VaultDeposit from rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe
+  -> tesSUCCESS  hash=D1E229528F53156DBFF62A4C47F586FFD87190C5B3241A03D1049EF551430BD8
+     https://devnet.xrpl.org/transactions/D1E229528F53156DBFF62A4C47F586FFD87190C5B3241A03D1049EF551430BD8
+  Vault AssetsTotal=200000000 AssetsAvailable=200000000 SharesTotal=None
+
+[4a LoanBrokerSet] LoanBrokerSet from rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas
+  -> tesSUCCESS  hash=8672F01B8AD314A50617F2E9B7FB53C6C15DBA7E937371E5E413065E14EB39DA
+     https://devnet.xrpl.org/transactions/8672F01B8AD314A50617F2E9B7FB53C6C15DBA7E937371E5E413065E14EB39DA
+  LoanBrokerID = 6CB4EF713E609CABC59290BB2978700E23AEEF6454CB27A3B1D68E2C397E2BD4
+
+[4b LoanBrokerCoverDeposit] LoanBrokerCoverDeposit from rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas
+  -> tesSUCCESS  hash=26799AB91233BB4345F2D243A75D5C57378237CBA1A2AFA3E174F1C3ADC0A8A6
+     https://devnet.xrpl.org/transactions/26799AB91233BB4345F2D243A75D5C57378237CBA1A2AFA3E174F1C3ADC0A8A6
+  LoanBroker: Owner=rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas VaultID=C08AD6CA2CB458EC9C09A4D63AEC91B1A0B4E6A0F3D2E3B623277BA027C443F1 CoverAvailable=20000000 DebtTotal=None DebtMaximum=100000000 CoverRateMinimum=10000
+
+[5] waiting for the vault's Investment phase (LoanSet is rejected during Subscription)
+  waiting for Investment phase: ledger time 846173612, need 846173712 (100s)
+  waiting for Investment phase: ledger time 846173630, need 846173712 (82s)
+  waiting for Investment phase: ledger time 846173640, need 846173712 (72s)
+  waiting for Investment phase: ledger time 846173651, need 846173712 (61s)
+  waiting for Investment phase: ledger time 846173660, need 846173712 (52s)
+  waiting for Investment phase: ledger time 846173671, need 846173712 (41s)
+  waiting for Investment phase: ledger time 846173681, need 846173712 (31s)
+  waiting for Investment phase: ledger time 846173690, need 846173712 (22s)
+  waiting for Investment phase: ledger time 846173701, need 846173712 (11s)
+  waiting for Investment phase: ledger time 846173711, need 846173712 (1s)
+  ledger close_time 846173712 >= 846173712: Investment phase
+
+[5 LoanSet] borrower-signed, broker counter-signed; submitting blob (hash 20B724D09E1416A1F9379DEB03F881E149061EE3A177690EDCD17AE2C0BE9260)
+  submit: tesSUCCESS The transaction was applied. Only final in a validated ledger.
+  -> tesSUCCESS  hash=20B724D09E1416A1F9379DEB03F881E149061EE3A177690EDCD17AE2C0BE9260
+     https://devnet.xrpl.org/transactions/20B724D09E1416A1F9379DEB03F881E149061EE3A177690EDCD17AE2C0BE9260
+  LoanID = 0EE298F93AA3CD79587E19968B7EF91D3D32956357FA7F1BA58339D3D4281E00
+  Loan: {"Borrower": "rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L", "PrincipalOutstanding": "50000000", "TotalValueOutstanding": "50000020", "PeriodicPayment": "16666673.00859473178", "PaymentRemaining": 3, "NextPaymentDueDate": 846173783, "StartDate": 846173723, "PaymentInterval": 60, "InterestRate": 10000, "LoanServiceFee": "10000", "ClosePaymentFee": "10000", "LoanScale": null, "Flags": 0}
+
+Balances after LoanSet
+  depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe  99.999999 XRP
+  broker    rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas  79.899998 XRP
+  borrower  rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L  149.899800 XRP
+
+[6a] installment = ceil(PeriodicPayment 16666673.00859473178) + LoanServiceFee 10000 = 16676674 drops
+
+[6a LoanPay installment] LoanPay from rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L
+  -> tesSUCCESS  hash=825368795FB868210BC0667916281F5FAD4DD2634AC4CAD629F24C9011CFE047
+     https://devnet.xrpl.org/transactions/825368795FB868210BC0667916281F5FAD4DD2634AC4CAD629F24C9011CFE047
+  Loan after: PrincipalOutstanding=33333337 TotalValueOutstanding=33333346 PaymentRemaining=2 NextPaymentDueDate=846173843
+
+[6b] full payoff = ceil(TotalValueOutstanding) + ClosePaymentFee + LoanServiceFee = 33353346 drops
+
+[6b LoanPay full payoff (tfLoanFullPayment)] LoanPay from rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L
+  -> tesSUCCESS  hash=AE84BB47C8DEC333A565EF168317ABD11BD323C9857E9D322D2806679762B877
+     https://devnet.xrpl.org/transactions/AE84BB47C8DEC333A565EF168317ABD11BD323C9857E9D322D2806679762B877
+  Loan after: PrincipalOutstanding=None PaymentRemaining=None Flags=0
+
+
+[7] Final balances
+  depositor rnvBrqEMBr5uqyne4AqMtSiD8t4c3xDpQe  99.999999 XRP
+  broker    rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas  79.919998 XRP
+  borrower  rs98JSqCz7qm8iBLFGcCS1Gdc2kYwAFU2L  99.879787 XRP
+  Vault:      {"AssetsTotal": "200000011", "AssetsAvailable": "200000011", "SharesTotal": null, "LossUnrealized": null, "VaultKind": 1, "SubscriptionDate": 846173711, "RedemptionDate": 846174311}
+  LoanBroker: {"DebtTotal": null, "CoverAvailable": "20000000", "OwnerCount": 1, "DebtMaximum": "100000000"}
+
+[8] skipped VaultWithdraw (re-run with --withdraw to wait for RedemptionDate and redeem shares)
+
+log: experiments/001-vault-loan-baseline/run-log.json

@@ -1,0 +1,131 @@
+[
+  {
+    "step": "2 VaultCreate",
+    "result": "tesSUCCESS",
+    "hash": "F93276B36D4B9E80809A0767F2B08BCEDB0F6B27174F37F8AFAF68CDB45B8DA8",
+    "explorer": "https://devnet.xrpl.org/transactions/F93276B36D4B9E80809A0767F2B08BCEDB0F6B27174F37F8AFAF68CDB45B8DA8",
+    "vault_id": "8E758E98E2383755178BBAD782EA552718F6DEDBB0041BE947166CF72A5A0248",
+    "share_mpt_id": "00000001067F0943FF31BED1C38A876CB1E45323CC3187F7"
+  },
+  {
+    "step": "3 VaultDeposit",
+    "result": "tesSUCCESS",
+    "hash": "BBAAED6E7444B1ED02893777D962D69B781F78BBB985E305C2690248450E180D",
+    "explorer": "https://devnet.xrpl.org/transactions/BBAAED6E7444B1ED02893777D962D69B781F78BBB985E305C2690248450E180D"
+  },
+  {
+    "step": "4a LoanBrokerSet",
+    "result": "tesSUCCESS",
+    "hash": "D3402DD6DD45494834284986F6180FA0C6498A1022AC76FC731E50AF8730E859",
+    "explorer": "https://devnet.xrpl.org/transactions/D3402DD6DD45494834284986F6180FA0C6498A1022AC76FC731E50AF8730E859",
+    "loan_broker_id": "51E3407C34802FB996DD1A4FADF5DAC227852A79BBEC824481B9090A5F70246D"
+  },
+  {
+    "step": "4b LoanBrokerCoverDeposit",
+    "result": "tesSUCCESS",
+    "hash": "46032C851FE0CE884F95F421A1DA4E98BF32EF9F8BF8E7573A2EA45394B4C7A3",
+    "explorer": "https://devnet.xrpl.org/transactions/46032C851FE0CE884F95F421A1DA4E98BF32EF9F8BF8E7573A2EA45394B4C7A3"
+  },
+  {
+    "step": "5 LoanSet",
+    "result": "tesSUCCESS",
+    "hash": "CCACD8AF07D132148DE65DC46D55D5DC39F701BDDA660621F2793DA4C137C515",
+    "explorer": "https://devnet.xrpl.org/transactions/CCACD8AF07D132148DE65DC46D55D5DC39F701BDDA660621F2793DA4C137C515",
+    "submit_engine_result": "tesSUCCESS",
+    "loan_id": "E389872EA2927C44250C3E1ECBA3F921B887FE199CF974F9B58A670FB50462D8"
+  },
+  {
+    "step": "6a LoanPay installment",
+    "result": "tesSUCCESS",
+    "hash": "1B4D75016B00732450000614C1FFC7BD140058EDC39C3AABAC38528F3418FDBB",
+    "explorer": "https://devnet.xrpl.org/transactions/1B4D75016B00732450000614C1FFC7BD140058EDC39C3AABAC38528F3418FDBB"
+  },
+  {
+    "step": "6b LoanPay full payoff (tfLoanFullPayment)",
+    "result": "tesSUCCESS",
+    "hash": "A5F81C6AF07CB592E6D17588EB3B955A0BBB87BB32D7C406733B06EEB1BC6D81",
+    "explorer": "https://devnet.xrpl.org/transactions/A5F81C6AF07CB592E6D17588EB3B955A0BBB87BB32D7C406733B06EEB1BC6D81"
+  },
+  {
+    "step": "6c LoanDelete (broker owner)",
+    "result": "tesSUCCESS",
+    "hash": "945E3984BDE24DED9B3E0A7D899FAF10A68260828EE41615DCD3A38019FB5430",
+    "explorer": "https://devnet.xrpl.org/transactions/945E3984BDE24DED9B3E0A7D899FAF10A68260828EE41615DCD3A38019FB5430"
+  },
+  {
+    "step": "7 final",
+    "vault": {
+      "Account": "rbMN8GVi7g6eHj9x2S9ymmqqwuWuDFaML",
+      "Asset": {
+        "currency": "XRP"
+      },
+      "AssetsAvailable": "200000011",
+      "AssetsTotal": "200000011",
+      "Data": "303031",
+      "Flags": 0,
+      "LEVersion": 1,
+      "LedgerEntryType": "Vault",
+      "Owner": "rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas",
+      "OwnerNode": "0",
+      "PreviousTxnID": "A5F81C6AF07CB592E6D17588EB3B955A0BBB87BB32D7C406733B06EEB1BC6D81",
+      "PreviousTxnLgrSeq": 6382783,
+      "RedemptionDate": 846174730,
+      "Sequence": 6382601,
+      "ShareMPTID": "00000001067F0943FF31BED1C38A876CB1E45323CC3187F7",
+      "SubscriptionDate": 846174130,
+      "VaultKind": 1,
+      "WithdrawalPolicy": 1,
+      "index": "8E758E98E2383755178BBAD782EA552718F6DEDBB0041BE947166CF72A5A0248"
+    },
+    "loan_broker": {
+      "Account": "raYuQSUD3c51irXVZsh1BxZfWKsJqfdNjR",
+      "CoverAvailable": "20000000",
+      "CoverRateLiquidation": 50000,
+      "CoverRateMinimum": 10000,
+      "Data": "303031",
+      "DebtMaximum": "100000000",
+      "Flags": 0,
+      "LedgerEntryType": "LoanBroker",
+      "LoanSequence": 2,
+      "ManagementFeeRate": 1000,
+      "Owner": "rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas",
+      "OwnerNode": "0",
+      "PreviousTxnID": "945E3984BDE24DED9B3E0A7D899FAF10A68260828EE41615DCD3A38019FB5430",
+      "PreviousTxnLgrSeq": 6382785,
+      "Sequence": 6382602,
+      "VaultID": "8E758E98E2383755178BBAD782EA552718F6DEDBB0041BE947166CF72A5A0248",
+      "VaultNode": "0",
+      "index": "51E3407C34802FB996DD1A4FADF5DAC227852A79BBEC824481B9090A5F70246D"
+    }
+  },
+  {
+    "step": "8 VaultWithdraw",
+    "result": "tesSUCCESS",
+    "hash": "AB425C99B74FB1A4A2280E0C0467C237896177F4AB2D9909A34CEC579453A555",
+    "explorer": "https://devnet.xrpl.org/transactions/AB425C99B74FB1A4A2280E0C0467C237896177F4AB2D9909A34CEC579453A555",
+    "vault_after": {
+      "Account": "r9kY3eLs11EXEq3ksAxxAzGeYairRrYATX",
+      "Asset": {
+        "currency": "XRP"
+      },
+      "AssetsAvailable": "11",
+      "AssetsTotal": "11",
+      "Data": "303031",
+      "Flags": 0,
+      "LEVersion": 1,
+      "LedgerEntryType": "Vault",
+      "Owner": "rfWhYXgxaxmoaUcsNTnvHSqmFFWckQgyas",
+      "OwnerNode": "0",
+      "PreviousTxnID": "AB425C99B74FB1A4A2280E0C0467C237896177F4AB2D9909A34CEC579453A555",
+      "PreviousTxnLgrSeq": 6382837,
+      "RedemptionDate": 846174311,
+      "Sequence": 6382597,
+      "ShareMPTID": "000000015FFCE1506D68CD6DF922B1ED5CA11103C73D4C54",
+      "SubscriptionDate": 846173711,
+      "VaultKind": 1,
+      "WithdrawalPolicy": 1,
+      "index": "C08AD6CA2CB458EC9C09A4D63AEC91B1A0B4E6A0F3D2E3B623277BA027C443F1"
+    },
+    "depositor_delta_drops": 199999999
+  }
+]

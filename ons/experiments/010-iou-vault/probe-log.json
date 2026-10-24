@@ -1,0 +1,51 @@
+[
+  {
+    "step": "p1 Payment issuer -> borrower2 on limit-0 auto-created line",
+    "result": "EXCEPTION: Transaction failed: tecPATH_DRY",
+    "hash": null,
+    "explorer": null
+  },
+  {
+    "step": "p2 TrustSet borrower2",
+    "result": "tesSUCCESS",
+    "hash": "E3E09C1BE4899A1024F29F9200126F00529C13EE51659C04C1886A28CC50E288",
+    "explorer": "https://devnet.xrpl.org/transactions/E3E09C1BE4899A1024F29F9200126F00529C13EE51659C04C1886A28CC50E288"
+  },
+  {
+    "step": "p3 Payment issuer -> borrower2 after TrustSet",
+    "result": "tesSUCCESS",
+    "hash": "F8C3E722CB7479DAA967FE5A4CE7D25F08954185DADBD4CCDE56C329686EB8E8",
+    "explorer": "https://devnet.xrpl.org/transactions/F8C3E722CB7479DAA967FE5A4CE7D25F08954185DADBD4CCDE56C329686EB8E8"
+  },
+  {
+    "step": "p4 LoanPay full payoff (tfLoanFullPayment)",
+    "result": "tesSUCCESS",
+    "hash": "9D522D909D5BF4BA37CC2BC70F19C2373A2BA8C52162953B3EF46AFD34F85375",
+    "explorer": "https://devnet.xrpl.org/transactions/9D522D909D5BF4BA37CC2BC70F19C2373A2BA8C52162953B3EF46AFD34F85375"
+  },
+  {
+    "step": "p5 LoanDelete (broker owner)",
+    "result": "tesSUCCESS",
+    "hash": "0CE985717340D307C930F2CC168CFE473B0C39B7211C0B835F925ECDE445C606",
+    "explorer": "https://devnet.xrpl.org/transactions/0CE985717340D307C930F2CC168CFE473B0C39B7211C0B835F925ECDE445C606"
+  },
+  {
+    "step": "probe final",
+    "vault": {
+      "AssetsTotal": "500.0000190866496",
+      "AssetsAvailable": "500.0000190866496"
+    },
+    "borrower2_lines": [
+      {
+        "account": "rEp2qoQxM86q4RJc11DNaFKjeNx22eG5qu",
+        "balance": "0.8699997463228",
+        "currency": "USD",
+        "limit": "1000000",
+        "limit_peer": "0",
+        "no_ripple": true,
+        "quality_in": 0,
+        "quality_out": 0
+      }
+    ]
+  }
+]
