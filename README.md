@@ -4,9 +4,13 @@
 
 **Agent spending. Within your rules.**
 
-A policy wallet for AI agents on XRPL. It was built at the XRPL Commons AI & Fintech Hackathon (New York, 24-25 October 2026), track Agentic Finance. XRPL testnet and devnet only; never mainnet, never real funds.
+A policy wallet for AI agents on XRPL. Within checks API payment requests against an operator's spending rules before signing. Our paying agent calls a wallet URL without receiving the signing key. Eligible small payments auto-sign; eligible larger payments wait for approval in the Ledger Speculos emulator. Off-policy requests are refused.
 
-An AI agent pays for APIs through a wallet URL, never a key: policy decides before the wallet signs, and a big loan waits for an approval that is bound to it by one hash.
+The Lending Desk explores loan decisions on devnet. Separately, our XRP app patch lets the Speculos emulator display lending fields before signing. The recorded runs use scripted taps; they do not prove physical-device use or human review.
+
+Within was built for the AI & Fintech XRPL Hackathon in New York, October 24–25, 2026, track Agentic Finance. XRPL testnet and devnet only; never mainnet, never real funds. The Policy Wallet handles payments on testnet; the Lending Desk tests underwriting on devnet. The wallet checks policy before signing. In the gate-enabled loan run, the desk is designed to verify the receipt before its software broker key counter-signs. Recorded transactions, response bodies and screenshots provide the evidence below.
+
+Start with the public receipt check below. Component setup, recorded transactions and technical findings follow.
 
 Demo video: A 50-second walkthrough is in [docs/video/](docs/video/).
 
@@ -16,7 +20,7 @@ Within has two components, the Policy Wallet and the Lending Desk, joined by one
 
 - **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Eligible payments up to 0.1 XRP sign on a hot key, eligible larger ones wait for an approval in the Speculos emulator, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
 - **The approval path that joins them**: large payments and large loans are approved in the Speculos emulator running the Ledger XRP app. No physical device signed anything.
-- **Lending Desk** (devnet): the off-chain underwriter that the Lending Protocol (XLS-66) leaves for someone to build. Automatic loans need a broker-issued Credential and a sufficient score from ledger history; eligible larger loans are held for approval, and the desk pays suppliers in one all-or-nothing Batch.
+- **Lending Desk** (devnet): runs a loan broker on the XRPL Lending Protocol (XLS-66) over a Single Asset Vault (XLS-65). Automatic approval requires a broker-issued Credential and a sufficient ledger-history score; eligible larger loans wait for approval; suppliers are paid in one all-or-nothing Batch; repayments and a default drawing on the broker first-loss cover are recorded on devnet.
 
 ## Verify it yourself in sixty seconds
 
@@ -60,7 +64,7 @@ The stock XRP app 2.8.1 rejects a LoanSet (`0x680b`, no reader for the Number ty
 | testnet | Loan approval Payment signed in Speculos; memos carry the LoanSet hash and the terms "approve loan 30 XRP ... 6 payments" | [`8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C`](https://testnet.xrpl.org/transactions/8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C) |
 | devnet | Held 30 XRP LoanSet that the approval binds; counter-signed by the software broker key | [`C9627B03199430510F43567C6A93A446116606AC4DA5FAE763BA8FAA6CDDDF13`](https://devnet.xrpl.org/transactions/C9627B03199430510F43567C6A93A446116606AC4DA5FAE763BA8FAA6CDDDF13) |
 | devnet | All-or-nothing Batch from that loan: 29 XRP to the supplier, 1 XRP fee | [`6C506E2B9E7B6027C9BBC80E6A75480A1DF2382346567F0BD98E60A540A29DDB`](https://devnet.xrpl.org/transactions/6C506E2B9E7B6027C9BBC80E6A75480A1DF2382346567F0BD98E60A540A29DDB) |
-| testnet | Held 5 XRP agent payment, approved in the emulator and signed by the device account | [`F4BFF2ADB2C2C7F2A22F4D91E45BF5D7903443DA2015B5CD68CE78B6591C4589`](https://testnet.xrpl.org/transactions/F4BFF2ADB2C2C7F2A22F4D91E45BF5D7903443DA2015B5CD68CE78B6591C4589) |
+| testnet | Held 5 XRP agent payment, approved in the Ledger Speculos emulator; its account signs | [`F4BFF2ADB2C2C7F2A22F4D91E45BF5D7903443DA2015B5CD68CE78B6591C4589`](https://testnet.xrpl.org/transactions/F4BFF2ADB2C2C7F2A22F4D91E45BF5D7903443DA2015B5CD68CE78B6591C4589) |
 | testnet | PermissionedDomainSet: membership is the merchant vetting Credential | [`74C098DAE8010EC40EE684C122012A23B18ACC92C4B0D7CCD09D619041D18DBB`](https://testnet.xrpl.org/transactions/74C098DAE8010EC40EE684C122012A23B18ACC92C4B0D7CCD09D619041D18DBB) |
 | testnet | DelegateSet grant: treasury lets the agent key send Payments | [`ED86FFF48E158D52DC963D328E149EE0C5A998D552648B61228D5AF3BD50457D`](https://testnet.xrpl.org/transactions/ED86FFF48E158D52DC963D328E149EE0C5A998D552648B61228D5AF3BD50457D) |
 | testnet | DelegateSet revoke | [`1F17133345A14245484127663CF375AE784ADDA0750882DCDC8859AC226EA448`](https://testnet.xrpl.org/transactions/1F17133345A14245484127663CF375AE784ADDA0750882DCDC8859AC226EA448) |
