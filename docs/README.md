@@ -1,6 +1,6 @@
 # Within documentation
 
-Within is a policy wallet for AI agents on XRPL. An agent pays for APIs over x402 through a wallet URL and never holds a signing key. Six policy checks run before the wallet signs. Eligible small payments sign on a hot key; eligible larger payments wait for approval in the Speculos emulator running the Ledger XRP app; off-policy requests are refused. A Lending Desk underwrites XLS-66 loans on devnet, and an XRP app patch lets the emulator display the lending fields before signing.
+Within is a policy wallet for AI agents on XRPL. The paying agent buys APIs over x402 through a wallet URL and never holds a signing key. Six policy checks run before the wallet signs. Eligible small payments sign on a hot key; eligible larger payments wait for approval in the Speculos emulator running the Ledger XRP app; off-policy requests are refused. A Lending Desk underwrites XLS-66 loans on devnet, and an XRP app patch lets the emulator display the lending fields before signing.
 
 This page is the index. Each section names its audience, the pages to read, and the commands that reproduce the result. Everything here runs against XRPL testnet or devnet. Nothing touches mainnet or real funds.
 
@@ -9,7 +9,7 @@ This page is the index. Each section names its audience, the pages to read, and 
 | Anyone | [Verify the approval receipt in sixty seconds](../README.md#verify-it-yourself-in-sixty-seconds) |
 | Wallet and x402 integrators | [Policy Wallet](#policy-wallet) |
 | XLS-65 / XLS-66 developers | [Lending Desk](#lending-desk) and [The approval receipt](#the-approval-receipt) |
-| Ledger embedded-app and Ledger Live engineers | [Ledger XRP app patch](#ledger-xrp-app-patch) and [Signing previews](#signing-previews) |
+| Ledger embedded-app and Ledger Live engineers | [Ledger XRP app patch](#ledger-xrp-app-patch) and [Application previews](#application-previews) |
 | Reviewers | [Evidence](#evidence) and [Limits](#limits) |
 
 ## Running the system
@@ -46,14 +46,14 @@ The wallet is a Node service. It holds the hot key and the Ledger Device Managem
 
 The six checks, in the order the code runs them (`wallet/src/policy.ts`):
 
-1. Policy expiry (`expiresAt`): refuse `policy_expired`.
+1. Policy expiry, when `expiresAt` is configured: refuse `policy_expired`.
 2. Network not in `allowedNetworks`: refuse `network_not_allowed`.
 3. Asset not in `allowedAssets`: refuse `asset_not_allowed`.
 4. Merchant neither in the static `allowedMerchants` list nor holding an accepted, unexpired Credential from the wallet's issuer: refuse `merchant_not_credentialed`.
 5. Amount plus today's spend above `dailyBudgetDrops`: refuse `daily_budget_exceeded`.
 6. Amount above `perTxCapDrops`: hold for emulator approval. Otherwise auto-sign on the hot key.
 
-`POST /v1/pay` is synchronous. A held request blocks until the emulator approves, the operator denies, or `holdTimeoutSeconds` passes. A refusal is an HTTP 403 with the reason; nothing reaches the ledger. The merchant allowlist is ledger state: a Credential inside a Permissioned Domain, plus a static override list. The agent's direct spending right is a `DelegateSet` the treasury grants and revokes; after a revoke a delegated Payment returns `terNO_DELEGATE_PERMISSION`.
+`POST /v1/pay` is synchronous. A held request blocks until the emulator approves, the operator denies, or `holdTimeoutSeconds` passes. A policy refusal is an HTTP 403 with the reason, returned before the wallet signs. A hold that times out returns 408, and a hold with no emulator connected returns 503. The merchant allowlist is ledger state: a Credential inside a Permissioned Domain, plus a static override list. The agent's direct spending right is a `DelegateSet` the treasury grants and revokes; after a revoke a delegated Payment returns `terNO_DELEGATE_PERMISSION`.
 
 ## Lending Desk
 
@@ -68,9 +68,9 @@ Desk API summary (port 7500, JSON). Operator calls require the `X-Desk-Token` he
 
 | Endpoint | Role |
 |---|---|
-| `POST /v1/loan-requests` | Borrower submits a signed `LoanSet` and a signed supplier `Batch`; the desk scores it and returns `auto`, `held` or a refusal |
+| `POST /v1/loan-requests` | Borrower submits a signed `LoanSet` and, for a working-capital request, a signed supplier `Batch`; the desk scores it and returns `auto`, `held` or a refusal |
 | `GET /v1/loan-requests`, `GET /v1/loan-requests/{id}` | List and read requests |
-| `POST /v1/loan-requests/{id}/approve` | Operator. Optional `approvalTxHash` of the testnet approval receipt; the desk verifies it before the broker key counter-signs |
+| `POST /v1/loan-requests/{id}/approve` | Operator. With `DESK_APPROVER_ACCOUNT` configured, `approvalTxHash` of the testnet approval receipt is required and verified before the broker key counter-signs; without it, approval is token-only |
 | `GET /v1/loan-requests/{id}/signed-loan-set` | Operator. The held, borrower-signed blob and its hash, for building the receipt |
 | `POST /v1/loan-requests/{id}/deny` | Operator |
 | `POST /v1/loans/{loanId}/manage` | Operator. `impair`, `unimpair` or `default` |
@@ -78,11 +78,11 @@ Desk API summary (port 7500, JSON). Operator calls require the `X-Desk-Token` he
 | `POST /v1/broker/cover`, `POST /v1/broker/credentials` | Operator. First-loss cover deposit; issue the borrower Credential |
 | `GET /v1/vault`, `GET /v1/policy`, `PUT /v1/policy`, `GET /health` | State and policy |
 
-Automatic approval requires a broker-issued Credential and a sufficient score computed from public ledger history plus the borrower's declared outside debt. Eligible larger loans are held. Suppliers are paid from the loan in one `tfAllOrNothing` Batch.
+Automatic approval requires a broker-issued Credential and a sufficient score computed from public ledger history plus the borrower's declared principal, debt, purpose and term. Eligible larger loans are held. Suppliers are paid from the loan in one `tfAllOrNothing` Batch.
 
 ## The approval receipt
 
-For an eligible loan above the automatic-approval limit, the Speculos emulator signs a 1-drop Payment on testnet. The Payment carries two memos:
+In the gate-enabled approval flow (`DESK_APPROVER_ACCOUNT` set), an eligible loan above the automatic-approval limit waits for the Speculos emulator to sign a 1-drop Payment on testnet. The Payment carries two memos:
 
 | MemoType (UTF-8) | MemoData | Meaning |
 |---|---|---|
@@ -100,7 +100,7 @@ What the check proves: the binding between one approval and one loan, from publi
 
 ## Ledger XRP app patch
 
-The stock XRP app 2.8.1 rejects any transaction carrying an `STNumber` field with status `0x680b`, so a `LoanSet` cannot be signed at all, and it shows the types that do reach blind signing as `Transaction Type: Unknown`. The patch adds the Number reader and the field labels for the lending, vault, credential and delegation transaction types. It does not add the counterparty signing prefix, so the broker still signs in software.
+The stock XRP app 2.8.1 rejects a `LoanSet` with status `0x680b` because it has no reader for the `STNumber` type, and it shows a `DelegateSet` as `Transaction Type: Unknown`. The patch adds the Number reader and the field labels for the lending, vault, credential and delegation transaction types. It does not add the counterparty signing prefix, so the broker still signs in software.
 
 | Page | What it covers |
 |---|---|
@@ -112,7 +112,7 @@ The stock XRP app 2.8.1 rejects any transaction carrying an `STNumber` field wit
 
 The patch is open as draft PR [LedgerHQ/app-xrp#97](https://github.com/LedgerHQ/app-xrp/pull/97). All device evidence comes from the Speculos emulator; no physical device signed anything.
 
-## Signing previews
+## Application previews
 
 `preview/` is a data package plus a small TypeScript engine: one JSON descriptor per transaction type turns `tx_json` into a titled, line-by-line preview with risk flags. It covers 19 types, 13 of them amendment-era (Credentials, Permissioned Domains, Permission Delegation, Batch, Vault, Lending).
 
@@ -146,6 +146,6 @@ The full list is in the README under [Honest limits](../README.md#honest-limits)
 ## Conventions
 
 - Networks: testnet (`xrpl:1`) for the wallet, devnet for the desk. Never mainnet.
-- No seed is committed. Wallet test keys derive from fixed test entropy at test time; runtime seeds live in gitignored `.env` files.
-- Each experiment folder under `ons/experiments/` is reproducible from its own README, with a `RESULT.md` that carries the transaction hashes.
+- Test fixtures include public test keys. Runtime credentials belong in gitignored `.env` files.
+- Experiment folders under `ons/experiments/` document their procedure in a README and record the available evidence in a `RESULT.md`; some are offline-only.
 - Findings are written up in this repository. The XRP app patch is filed as a draft PR; the issues are not yet filed.
