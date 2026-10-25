@@ -1,0 +1,16 @@
+test_invalid_approval_amount (__main__.VerifierTests.test_invalid_approval_amount) ... ok
+test_mismatch_digest_and_terms (__main__.VerifierTests.test_mismatch_digest_and_terms) ... ok
+test_missing_duplicate_and_bad_memos (__main__.VerifierTests.test_missing_duplicate_and_bad_memos) ... ok
+test_positive_v1 (__main__.VerifierTests.test_positive_v1) ... ok
+test_positive_v2 (__main__.VerifierTests.test_positive_v2) ... ok
+test_rpc_failure_is_error (__main__.VerifierTests.test_rpc_failure_is_error) ... ok
+test_signatures_required_and_multisign_rejected (__main__.VerifierTests.test_signatures_required_and_multisign_rejected) ... ok
+test_terms_decimal_exact (__main__.VerifierTests.test_terms_decimal_exact) ... ok
+test_unknown_field_not_silently_dropped (__main__.VerifierTests.test_unknown_field_not_silently_dropped) ... ok
+test_unvalidated_and_tec (__main__.VerifierTests.test_unvalidated_and_tec) ... ok
+test_wrong_hash_or_type (__main__.VerifierTests.test_wrong_hash_or_type) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.285s
+
+OK

@@ -1,0 +1,12 @@
+[
+  {
+    "negative": false,
+    "status": "BINDING ERROR: Failed to fetch",
+    "output": "codec: \"xrpl.js 5.3.0 UMD\"\nrequested_hashes: {\"approval\":\"8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C\",\"loanset\":\"C9627B03199430510F43567C6A93A446116606AC4DA5FAE763BA8FAA6CDDDF13\"}\nrpc_request: {\"url\":\"https://s.altnet.rippletest.net:51234/\",\"method\":\"tx\",\"params\":[{\"transaction\":\"8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C\",\"binary\":false,\"api_version\":2}]}\nresult: \"BINDING ERROR: Failed to fetch\"\n"
+  },
+  {
+    "negative": true,
+    "status": "BINDING ERROR: Failed to fetch",
+    "output": "codec: \"xrpl.js 5.3.0 UMD\"\nrequested_hashes: {\"approval\":\"8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C\",\"loanset\":\"0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243\"}\nrpc_request: {\"url\":\"https://s.altnet.rippletest.net:51234/\",\"method\":\"tx\",\"params\":[{\"transaction\":\"8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C\",\"binary\":false,\"api_version\":2}]}\nresult: \"BINDING ERROR: Failed to fetch\"\n"
+  }
+]

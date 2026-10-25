@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify an XRPL approval binding</title>
+<style>body{max-width:880px;margin:48px auto;padding:0 24px;font:16px/1.5 system-ui;color:#1c2530;background:#f7f8fa}h1{font-size:28px}label{display:block;margin-top:18px}input{box-sizing:border-box;width:100%;padding:10px;font:13px monospace}button{margin:20px 10px 10px 0;padding:10px 16px;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;border:1px solid #d6dce2;padding:16px;font-size:12px}small{color:#536170}#status{font-weight:650}</style>
+<h1>Verify an approval-to-loan binding</h1>
+<p><strong>Experimental browser path:</strong> tested public-node access was blocked by CORS. Use the passing <a href="README.md">Python CLI</a> for the demonstrated check.</p>
+<p>Compare two public transactions. The approval memo must match the borrower-signed LoanSet digest and its selected terms.</p>
+<label for="approval">Approval Payment · testnet</label><input id="approval" spellcheck="false" value="8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C">
+<label for="loan">LoanSet · devnet</label><input id="loan" spellcheck="false" value="C9627B03199430510F43567C6A93A446116606AC4DA5FAE763BA8FAA6CDDDF13">
+<button id="verify" disabled>Verify public data</button><button id="negative">Use wrong-loan control</button>
+<p id="status" role="status">Loading pinned xrpl.js 5.3.0 codec…</p><pre id="output" aria-live="polite"></pre>
+<p><strong>Binding is not authorization.</strong> No expected approver is pinned. This cannot prove human review, signing hardware or that the desk enforced its gate. The demonstration used the Speculos emulator; the broker counter-signature is software. There is no on-ledger link between these networks.</p>
+<small>Known XRP-vault demonstration only: principal is interpreted as XRP drops. Only principal, borrower and payment count appear in the readable terms. Requests go directly to the public testnet/devnet nodes; no signing, submission, cache, wallet connection or stage service. RPC/CORS failures produce ERROR, never PASS. <a href="README.md">CLI, limits and recorded runs</a>.</small>
+<script src="https://cdn.jsdelivr.net/npm/xrpl@5.3.0/build/xrpl-latest-min.js" onerror="document.getElementById('status').textContent='BINDING ERROR: pinned codec could not load; use the Python CLI.'"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), nodeFields=new Set(['hash','ledger_index','meta','validated','date','inLedger','ctid','ledger_hash','close_time_iso','status','tx_json','ledger_current_index','warnings','api_version']);
+const log=(k,v)=>{$('output').textContent+=k+': '+JSON.stringify(v)+'\n';};
+const require=(ok,why)=>{if(!ok)throw new Error(why);};
+const hex=(v,label)=>{require(typeof v==='string' && /^(?:[0-9a-fA-F]{2})*$/.test(v),label+': malformed hex');return Uint8Array.from(v.match(/../g)||[],h=>parseInt(h,16));};
+const asHex=bytes=>Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();
+const digest=async bytes=>asHex(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)));
+async function tx(url,hash,type,label){
+ const body={method:'tx',params:[{transaction:hash,binary:false,api_version:2}]}; log('rpc_request',{url,...body});
+ const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(20000)});
+ require(response.ok,'RPC HTTP '+response.status); const payload=await response.json(),r=payload.result;
+ require(r && typeof r==='object' && !r.error,'RPC result error: '+(r?.error||'missing result'));
+ const t=r.tx_json||r,checks={validated:r.validated===true,tesSUCCESS:r.meta?.TransactionResult==='tesSUCCESS',hash_matches_request:typeof(r.hash||t.hash)==='string'&&(r.hash||t.hash).toUpperCase()===hash,transaction_type:t.TransactionType===type};
+ log(label+'_checks',checks);log(label+'_ledger',r.ledger_index);require(Object.values(checks).every(Boolean),label+': validation/type/hash check failed');
+ if(t.hash!==undefined)require(typeof t.hash==='string'&&t.hash.toUpperCase()===hash,label+': nested hash mismatch');
+ return Object.fromEntries(Object.entries(t).filter(([k])=>!nodeFields.has(k)));
+}
+function terms(t){
+ // Exact whole-drop decimal parsing, including codec scientific notation; no floating point.
+ const raw=t.PrincipalRequested; require(typeof raw==='string'||Number.isSafeInteger(raw),'invalid principal');
+ const m=String(raw).match(/^\+?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);require(m,'invalid principal');
+ let n=BigInt(m[1]+(m[2]||'')), exp=Number(m[3]||0)-(m[2]||'').length;require(Number.isSafeInteger(exp)&&Math.abs(exp)<=100,'unsupported principal exponent');
+ if(exp>=0)n*=10n**BigInt(exp);else{const d=10n**BigInt(-exp);require(n%d===0n,'fractional drops unsupported');n/=d;}
+ require(n>0n&&n<=100000000000000000n,'principal outside supported XRP drops');
+ const frac=n%1000000n,xrp=(n/1000000n).toString()+(frac?'.'+frac.toString().padStart(6,'0').replace(/0+$/,''):'');
+ require(Number.isInteger(t.PaymentTotal)&&t.PaymentTotal>0&&t.PaymentTotal<=0xffffffff,'invalid PaymentTotal');require(typeof t.Account==='string'&&t.Account.length>0,'missing borrower');
+ log('terms_inputs',{PrincipalRequested_drops:String(raw),principal_XRP:xrp,Account:t.Account,PaymentTotal:t.PaymentTotal,asset_assumption:'XRP vault'});
+ return `approve loan ${xrp} XRP to ${t.Account} ${t.PaymentTotal} payments`;
+}
+async function verify(){
+ $('verify').disabled=true;$('output').textContent='';$('status').textContent='Checking public nodes…';
+ try{
+  const a=$('approval').value.trim().toUpperCase(),l=$('loan').value.trim().toUpperCase();require(/^[0-9A-F]{64}$/.test(a)&&/^[0-9A-F]{64}$/.test(l),'hashes must be 64 hex characters');
+  log('codec','xrpl.js 5.3.0 UMD');log('requested_hashes',{approval:a,loanset:l});
+  const pay=await tx('https://s.altnet.rippletest.net:51234/',a,'Payment','approval'),loan=await tx('https://s.devnet.rippletest.net:51234/',l,'LoanSet','loanset');
+  const amount=pay.Amount??pay.DeliverMax;log('observed_approval',{Account:pay.Account,SigningPubKey:pay.SigningPubKey,Destination:pay.Destination,Amount_drops:amount,Delegate:pay.Delegate??null});
+  require(typeof amount==='string'&&/^\d+$/.test(amount)&&BigInt(amount)>0n&&BigInt(amount)<=100000000000000000n,'invalid approval XRP amount');
+  require(!('Signers'in loan),'multisigned borrower unsupported');
+  require(loan.CounterpartySignature&&typeof loan.CounterpartySignature==='object','CounterpartySignature required');
+  for(const k of ['SigningPubKey','TxnSignature']){require(hex(loan[k],'borrower '+k).length>0,'missing borrower signature');require(hex(loan.CounterpartySignature[k],'counterparty '+k).length>0,'missing counterparty signature');}
+  require(Array.isArray(pay.Memos),'approval memos missing');let md,mt;const decoder=new TextDecoder('utf-8',{fatal:true});
+  for(const row of pay.Memos){require(row&&row.Memo&&typeof row.Memo==='object','malformed memo');const k=asHex(hex(row.Memo.MemoType??'','MemoType'));
+   if(k==='6C6F616E2D617070726F76616C'.toUpperCase()){require(md===undefined,'duplicate loan-approval');const b=hex(row.Memo.MemoData,'loan-approval');require(b.length===32,'expected 32-byte digest');md=asHex(b);}
+   if(k==='6C6F616E2D7465726D73'.toUpperCase()){require(mt===undefined,'duplicate loan-terms');mt=decoder.decode(hex(row.Memo.MemoData,'loan-terms'));}
+  }require(md!==undefined&&mt!==undefined,'required memo missing');log('memo_loan_approval_hex',md);log('memo_loan_terms_utf8',mt);
+  const borrower={...loan};delete borrower.CounterpartySignature;log('borrower_encoded_field_names',Object.keys(borrower).sort());
+  const blob=xrpl.encode(borrower),decoded=xrpl.decode(blob);require(JSON.stringify(Object.keys(decoded).sort())===JSON.stringify(Object.keys(borrower).sort()),'codec omitted field');
+  const dh=await digest(hex(blob,'encoded transaction'));log('canonical_borrower_blob_bytes',blob.length/2);log('canonical_borrower_blob_sha256',dh);const dt=terms(decoded);log('derived_loan_terms',dt);
+  const checks={digest_match:dh===md,terms_match:dt===mt};log('binding_checks',checks);log('authorization','NOT VERIFIED');
+  $('status').textContent=Object.values(checks).every(Boolean)?'BINDING PASS':'BINDING FAIL: '+Object.keys(checks).filter(k=>!checks[k]).join(', ');
+ }catch(e){$('status').textContent='BINDING ERROR: '+e.message;}
+ finally{log('result',$('status').textContent);$('verify').disabled=false;}
+}
+$('negative').onclick=()=>{$('loan').value='0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243';};
+$('verify').onclick=verify;
+if(window.xrpl&&typeof xrpl.encode==='function'&&typeof xrpl.decode==='function'){$('verify').disabled=false;$('status').textContent='Ready. Pinned xrpl.js 5.3.0 loaded.';}
+</script></html>
