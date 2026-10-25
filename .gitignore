@@ -1,0 +1,17 @@
+node_modules/
+.venv/
+.env
+.env.local
+*.log
+data/
+dist/
+__pycache__/
+.pytest_cache/
+*.tsbuildinfo
+.DS_Store
+.secrets/
+.seed
+
+# Recorded evidence logs from the experiments are part of the repo.
+!ons/experiments/*/logs/
+!ons/experiments/*/logs/*.log
