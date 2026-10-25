@@ -6,7 +6,7 @@
 
 Within is a policy wallet for AI agents on the XRP Ledger. The paying agent buys APIs over x402 through a wallet URL and never holds a signing key. Six policy checks run before the wallet signs. Eligible payments up to 0.1 XRP auto-sign on a hot key; eligible larger ones wait for review and hold-to-sign in the Ledger XRP app on the Speculos Stax emulator; off-policy requests are refused before anything reaches the ledger. Merchant access uses an on-ledger Credential (or an explicit static allowlist entry), and the agent's direct spending right is a revocable Delegate.
 
-- **Demo video:** https://youtu.be/BD3VG-yo4MM
+
 - **Event:** XRPL Commons AI & Fintech XRP Ledger Hackathon, New York, October 24–25, 2026
 - **Track:** Agentic Finance. **Sponsor bounty:** Ledger.
 - **Networks:** XRPL testnet (wallet) and devnet (Lending Desk) only. No real funds.
