@@ -18,4 +18,4 @@
 Three invariants:
 1. The agent process never holds a signing key. It holds `http://localhost:7402`.
 2. The decision is made in code from `policy.json` before any signing. Nothing the model says can change it.
-3. Two accounts: a hot float for small spends, a device-held treasury for big ones. Blast radius is the float.
+3. Two accounts: a hot float for small spends, a treasury for big ones whose key sits in the Ledger XRP app on the Speculos emulator (no physical device in this build). Blast radius is the float.
