@@ -1,0 +1,18 @@
+/* Within identity tokens. Opt in with class="within-brand" or data-brand="within".
+   No global selectors, imports, font downloads, or application behavior changes. */
+.within-brand,
+[data-brand="within"] {
+  --within-ink: #0A1630;
+  --within-shell: #101E42;
+  --within-cobalt: #2F5BFF;
+  --within-pale: #F2F5FC;
+  --within-white: #FFFFFF;
+  --within-muted: #9198A1;
+  --within-link-on-dark: #9BB5FF;
+  --within-font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --within-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --within-shell-radius: 12px;
+  --within-rule-width: 1px;
+  --within-focus-width: 2px;
+  --within-focus-offset: 3px;
+}

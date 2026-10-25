@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "name": "Within",
+  "submission_name": "Within: Agent spending. Within your rules.",
+  "wordmark": "within",
+  "tagline": "Agent spending. Within your rules.",
+  "terminal_tagline": "agent spending. within your rules.",
+  "descriptor": "A policy wallet for AI agents on XRPL.",
+  "positioning": "Within gives AI agents a wallet URL for policy-controlled payments on XRPL.",
+  "introduction": "Within gives AI agents a wallet URL for policy-controlled payments on XRPL. The wallet checks requests before signing. Eligible payments auto-sign; eligible larger payments wait for approval in the Ledger Speculos emulator.",
+  "proof_line": "Policy before the wallet signs.",
+  "voice": [
+    "precise",
+    "composed",
+    "technical",
+    "plainspoken"
+  ],
+  "colors": {
+    "ink": "#0A1630",
+    "shell": "#101E42",
+    "cobalt": "#2F5BFF",
+    "pale": "#F2F5FC",
+    "white": "#FFFFFF",
+    "muted": "#9198A1",
+    "link_on_dark": "#9BB5FF"
+  },
+  "typography": {
+    "sans": "Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "mono": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "usage": {
+      "sans": "Headlines and body copy",
+      "mono": "Tagline in terminal panels, labels, amounts, hashes, and status"
+    }
+  },
+  "calls_to_action": {
+    "primary": "View the demo",
+    "secondary": "Verify the receipt"
+  },
+  "assets": {
+    "identity_board": "within-logo-v3-terminal.png",
+    "logo_on_light": "within-logo-v3-cobalt-transparent.png",
+    "logo_monochrome": "within-logo-v3-black-transparent.png"
+  },
+  "component_names": {
+    "wallet": "Policy Wallet",
+    "lending": "Lending Desk"
+  },
+  "naming_rules": {
+    "prose_and_form": "Use Within in prose.",
+    "logo_only": "within",
+    "suffixes": "Use component names as descriptions, not additional brands.",
+    "continuity": "Use historical component names only when identifying demo segments or evidence; the brand subtitle is the tagline."
+  },
+  "usage_rules": {
+    "clear_space": "At least one central-dot diameter around the complete logo.",
+    "cobalt_field": "Use white brackets with a navy dot on a solid cobalt field.",
+    "small_sizes": "Prefer a high-contrast monochrome mark; the board's 16px navy sample is not a validated favicon.",
+    "ui_state": "Cobalt is a brand color, not proof that a transaction is approved.",
+    "contrast": "Use ink on pale, white on ink or shell, white on cobalt, and link_on_dark for small links on navy."
+  },
+  "legacy_component_label": "Policy Wallet and Lending Desk"
+}
