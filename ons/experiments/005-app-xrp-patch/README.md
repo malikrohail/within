@@ -53,8 +53,9 @@ git -C app-xrp apply ../patch/app-xrp-lending-fields.diff
 3. **26 transaction type names** (MPT 54-57, Credentials 58-60, PermissionedDomain 62-63,
    DelegateSet 64, Vault 65-70, Batch 71, LoanBroker 74-78, Loan 80/81/82/84). All but
    MPT* and Batch are added to `is_supported_transaction_type()`, so they get the field-by-field review.
-4. **Field names** for every XLS-65/66, Credential, PermissionedDomain and DelegateSet
-   field (table in `RESULT.md`), plus formatters: STNumber as a decimal; lending rates
+4. **Field names** for the XLS-65/66, Credential, PermissionedDomain and DelegateSet
+   fields exercised by the 20 new fixtures (table in `RESULT.md`; the 26 transaction-type
+   names are separate from full field review), plus formatters: STNumber as a decimal; lending rates
    (1/10 bp) as percent (`500` -> `0.5 %`); `PaymentInterval`/`GracePeriod` as seconds;
    `StartDate`/`SubscriptionDate`/`RedemptionDate` as UTC timestamps; `PermissionValue`
    as the permission name (`Payment`, `Trustline Authorize`); flags for `VaultCreate`

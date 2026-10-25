@@ -14,9 +14,9 @@ Demo video: A 50-second walkthrough is in [docs/video/](docs/video/).
 
 Within has two components, the Policy Wallet and the Lending Desk, joined by one approval path:
 
-- **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Small payments sign on a hot key under a 0.1 XRP cap, larger ones wait for an approval, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
+- **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Eligible payments up to 0.1 XRP sign on a hot key, eligible larger ones wait for an approval in the Speculos emulator, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
 - **The approval path that joins them**: large payments and large loans are approved in the Speculos emulator running the Ledger XRP app. No physical device signed anything.
-- **Lending Desk** (devnet): the off-chain underwriter that the Lending Protocol (XLS-66) leaves for someone to build. It gates on a Credential, scores the borrower from ledger history, lends small amounts automatically, holds large ones for approval, and pays suppliers in one all-or-nothing Batch.
+- **Lending Desk** (devnet): the off-chain underwriter that the Lending Protocol (XLS-66) leaves for someone to build. Automatic loans need a broker-issued Credential and a sufficient score from ledger history; eligible larger loans are held for approval, and the desk and pays suppliers in one all-or-nothing Batch.
 
 ## Verify it yourself in sixty seconds
 
@@ -32,7 +32,7 @@ Expected last line: **`BINDING PASS`**, exit 0.
 
 Negative control: run the same command with `--loanset 0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243` (experiment 011's LoanSet, which this approval does not bind). Expected: **`BINDING FAIL: digest_match, terms_match`**, exit 1.
 
-What PASS means: the approval memo equals the SHA-256 of the borrower-signed LoanSet, and the terms memo matches the loan. It does not prove hardware, human review, or the order in which the desk checks and signs. Details: [the verifier](ons/experiments/014-astra/verify/).
+What PASS means: the approval memo equals the SHA-256 of the borrower-signed LoanSet, and the terms memo matches the loan. It checks one demonstrated pair and only the selected terms (principal, borrower, payment count). It is a binding check, not an authorization check: it does not prove hardware, human review, or the order in which the desk checks and signs. Details: [the verifier](ons/experiments/014-astra/verify/).
 
 ## How it works
 
