@@ -4,23 +4,12 @@
 
 **Agent spending. Within your rules.**
 
-A policy wallet for AI agents on XRPL. Within checks API payment requests against an operator's spending rules before signing. Our paying agent calls a wallet URL without receiving the signing key. Eligible small payments auto-sign; eligible larger payments wait for approval in the Ledger Speculos emulator. Off-policy requests are refused.
+Within is a policy wallet for AI agents on the XRP Ledger. The paying agent buys APIs over x402 through a wallet URL and never holds a signing key. Six policy checks run before the wallet signs. Eligible payments up to 0.1 XRP auto-sign on a hot key; eligible larger ones wait for review and hold-to-sign in the Ledger XRP app on the Speculos Stax emulator; off-policy requests are refused before anything reaches the ledger. A Lending Desk underwrites XLS-66 loans on devnet, and a "one hash, two ledgers" receipt binds an emulator-signed testnet approval to the exact loan the borrower signed. Our XRP app patch lets the emulator display the lending fields before signing.
 
-The Lending Desk explores loan decisions on devnet. Separately, our XRP app patch lets the Speculos emulator display lending fields before signing. The recorded runs use scripted taps; they do not prove physical-device use or human review.
-
-Within was built for the AI & Fintech XRPL Hackathon in New York, October 24–25, 2026, track Agentic Finance. XRPL testnet and devnet only; never mainnet, never real funds. The Policy Wallet handles payments on testnet; the Lending Desk tests underwriting on devnet. The wallet checks policy before signing. In the gate-enabled loan run, the desk is designed to verify the receipt before its software broker key counter-signs. Recorded transactions, response bodies and screenshots provide the evidence below.
-
-Start with the public receipt check below. Component setup, recorded transactions and technical findings follow.
-
-Demo video: pending selection and upload.
-
-## What it does
-
-Within has two components, the Policy Wallet and the Lending Desk, joined by one approval path:
-
-- **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Eligible payments up to 0.1 XRP sign on a hot key, eligible larger ones wait for an approval in the Speculos emulator, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
-- **The approval path that joins them**: eligible larger payments and loan requests wait for approval in the Speculos emulator running the Ledger XRP app, and off-policy ones are refused. The recorded runs use scripted taps; no physical device signed anything.
-- **Lending Desk** (devnet): runs a loan broker on the XRPL Lending Protocol (XLS-66) over a Single Asset Vault (XLS-65). Automatic approval requires a broker-issued Credential and a sufficient ledger-history score; eligible larger loans wait for approval; suppliers are paid in one all-or-nothing Batch; repayments and a default drawing on the broker first-loss cover are recorded on devnet.
+- **Demo video:** https://youtu.be/BD3VG-yo4MM
+- **Event:** XRPL Commons AI & Fintech XRP Ledger Hackathon, New York, October 24–25, 2026
+- **Track:** Agentic Finance. **Sponsor bounty:** Ledger.
+- **Networks:** XRPL testnet (wallet) and devnet (Lending Desk) only. No real funds.
 
 ## Verify it yourself in sixty seconds
 
@@ -34,13 +23,17 @@ python3 -m venv /tmp/verify-venv
 
 Expected last line: **`BINDING PASS`**, exit 0.
 
-Negative control: run the same command with `--loanset 0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243` (experiment 011's LoanSet, which this approval does not bind). Expected: **`BINDING FAIL: digest_match, terms_match`**, exit 1.
+Negative control: the same command with `--loanset 0CE7AFEF47E0F092CFABBEB78DAD6848B1BE8E5338C5BFB9CCC0804A49B16243` (experiment 011's LoanSet, which this approval does not bind). Expected: **`BINDING FAIL: digest_match, terms_match`**, exit 1.
 
-What PASS means: the approval memo equals the SHA-256 of the borrower-signed LoanSet, and the terms memo matches the loan. It checks one demonstrated pair and only the selected terms (principal, borrower, payment count). It is a binding check, not an authorization check: it does not prove hardware, human review, or the order in which the desk checks and signs. Details: [the verifier](ons/experiments/014-astra/verify/).
+PASS means the approval memo equals the SHA-256 of the borrower-signed LoanSet and the terms memo matches the loan (principal, borrower, payment count). It checks one demonstrated pair. It is a binding check, not an authorization check: public data does not prove hardware, human review, or the order in which the desk checks and signs. Details: [the verifier](ons/experiments/014-astra/verify/).
 
 ## How it works
 
-When a loan is above the desk's limit, the Speculos emulator signs a 1-drop Payment on testnet. That Payment carries two memos: the SHA-256 of the exact LoanSet the borrower signed, and the terms in plain text (principal, borrower, payment count). The desk is designed to verify the signer, the hash and the terms before its software broker key counter-signs the loan on devnet. Neither ledger enforces the link; the desk does.
+**Policy Wallet (testnet).** The agent pays for APIs over x402 (HTTP 402 pay-per-call) by calling the wallet URL. Six checks run in order before signing: policy expiry, network, asset, merchant access, daily budget, per-payment cap. A merchant that has neither an accepted Credential nor a static allowlist entry is refused, and nothing reaches the ledger. A pending hold expires if it is not approved in time. Rules and order: [docs/CONTRACT.md](docs/CONTRACT.md). Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+**Lending Desk (devnet).** A loan broker on the XRPL Lending Protocol (XLS-66) over a Single Asset Vault (XLS-65). Automatic approval requires a broker-issued Credential and a sufficient ledger-history score; eligible larger loans are held; suppliers are paid in one all-or-nothing Batch; repayments and a default drawing on the broker's first-loss cover are recorded on devnet.
+
+**One hash, two ledgers.** For an eligible loan above the automatic limit, the Speculos emulator signs a 1-drop Payment on testnet with two memos: the SHA-256 of the exact LoanSet the borrower signed, and the terms in plain text. The desk is designed to verify the signer, the hash and the terms before its software broker key counter-signs the loan on devnet.
 
 ```mermaid
 flowchart LR
@@ -53,9 +46,16 @@ flowchart LR
   V -.reads.-> L
 ```
 
-Two of the wallet's guardrails are ledger objects: the Credential allowlist and the revocable Delegate. The cap, budget, network and asset checks are policy settings. The merchant allowlist is a Credential inside a Permissioned Domain, plus a static override list. The agent's spending right is a DelegateSet that the treasury can grant and revoke; after a revoke, a delegated Payment returns `terNO_DELEGATE_PERMISSION`. Policy rules and their order: [docs/CONTRACT.md](docs/CONTRACT.md). Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+**The XRP app patch.** The stock XRP app 2.8.1 rejects a LoanSet (`0x680b`, no reader for the Number type). Our patch adds a Number reader and the lending field labels. The app's own test suite in Speculos gave 142 passed, 11 skipped, 0 failed, and the patched app signed a LoanSet and a LoanPay as the borrower that validated on devnet. The patch does not add the counterparty signing prefix, so the broker still signs in software. See [experiment 005](ons/experiments/005-app-xrp-patch/) and [experiment 011](ons/experiments/011-speculos-loanset-devnet/).
 
-The stock XRP app 2.8.1 rejects a LoanSet (`0x680b`, no reader for the Number type). Our patch adds the lending fields: a Number reader and the field labels. The app's own test suite in Speculos gave 142 passed, 11 skipped, 0 failed, and the patched app signed a LoanSet and a LoanPay as the borrower that validated on devnet. The patch does not add the counterparty signing prefix, so the broker still signs in software. See [experiment 005](ons/experiments/005-app-xrp-patch/) and [experiment 011](ons/experiments/011-speculos-loanset-devnet/).
+## What the ledger enforces, what the wallet enforces
+
+| Enforced by | What |
+|---|---|
+| XRPL ledger | The revocable Delegate: the treasury grants, revokes and re-grants the agent key's right to send Payments (`DelegateSet`); after a revoke, a delegated Payment returns `terNO_DELEGATE_PERMISSION`. Covers direct Payments only. Supplier Payments in a `tfAllOrNothing` Batch apply together or not at all. |
+| XRPL ledger state, checked by the wallet | The merchant Credential inside a Permissioned Domain. The wallet also accepts an explicit static allowlist entry. |
+| Wallet (server policy, before signing) | Policy expiry, network, asset, daily budget, per-payment cap and hold timeout. Automatic x402 payments sign on the hot key under this software cap. |
+| Lending Desk (software) | The Credential and score gate for automatic loans, and the receipt check before the software broker key counter-signs. Neither ledger enforces the link between the two ledgers; the desk does. |
 
 ## Proof on the ledger
 
@@ -78,6 +78,34 @@ The stock XRP app 2.8.1 rejects a LoanSet (`0x680b`, no reader for the Number ty
 Refusals happen before the wallet signs or the broker counter-signs, so they leave no transaction; their evidence is the API response and the unchanged balances, recorded in [lending/EVIDENCE.md](lending/EVIDENCE.md).
 
 The build exercised six amendments end to end: Credentials, Permissioned Domains, Permission Delegation, Batch, Single Asset Vault (XLS-65) and the Lending Protocol (XLS-66). Seven XRPL integration findings are in [docs/XRPL_FINDINGS.md](docs/XRPL_FINDINGS.md) and twelve Ledger developer-experience findings in [docs/LEDGER_DX_FEEDBACK.md](docs/LEDGER_DX_FEEDBACK.md); the two lists overlap.
+
+## How this was built and verified
+
+Code was written by AI agents under human direction and review; automation drove the emulator taps.
+
+The checks recorded in this repository:
+
+- **Receipt verifier, public nodes.** The PASS run (exit 0) and the negative control (`BINDING FAIL: digest_match, terms_match`, exit 1), with the verifier's SHA-256 and the timestamp: [verify/RESULT.md](ons/experiments/014-astra/verify/RESULT.md). An earlier run that hit an RPC transport error is kept in [verify/INITIAL-RPC-ERROR.md](ons/experiments/014-astra/verify/INITIAL-RPC-ERROR.md). Offline tests: `ons/experiments/014-astra/verify/test_verify.py`.
+- **XRP app patch tests in Speculos.** The app's full standalone suite: 142 passed, 11 skipped, 0 failed. The golden run passed 26 selected tests, and the verify run passed 16 against the new goldens. Results in [005 RESULT.md](ons/experiments/005-app-xrp-patch/RESULT.md); raw logs in `ons/experiments/005-app-xrp-patch/logs/`; screens in `ons/experiments/005-app-xrp-patch/screens/`.
+- **Patched app on devnet.** The LoanSet and LoanPay above, re-read from the public devnet node after the run: [011 RESULT.md](ons/experiments/011-speculos-loanset-devnet/RESULT.md).
+- **Transactions.** The thirteen hashes in [Proof on the ledger](#proof-on-the-ledger), each linked to its public explorer page. Raw public-node request and response captures of the binding are in [innovation/proof-of-concept/](innovation/proof-of-concept/).
+- **Lending runs.** Desk transactions, responses and balances, including refusals: [lending/EVIDENCE.md](lending/EVIDENCE.md). Earlier protocol experiments: [001 RESULT.md](ons/experiments/001-vault-loan-baseline/RESULT.md) and [010 RESULT.md](ons/experiments/010-iou-vault/RESULT.md).
+- **Offline test suites** for the wallet, desk, agent, previews, dashboard and verifier; commands under [Run it locally](#run-it-locally).
+
+Disclosure: an x402 client and Ledger DMK signing on the emulator were proven in separate spikes before the event and reused, not claimed. This repository is a curated export; the original build history starts at 02:24 EDT on 24 October 2026, before the doors opened.
+
+## Honest limits
+
+- Every device signature came from the Speculos emulator. No physical device signed anything.
+- The wallet runs on testnet and the desk on devnet, so the loop is stitched across two networks. Loans are in XRP.
+- The broker counter-signature uses a software key.
+- The score uses public ledger history plus the borrower's own declared outside debt; no bank or credit-bureau data.
+- Devnet income is simulated: script-sent, memo-tagged Payments, shown as evidence, not a score weight.
+- Automatic x402 payments run on the hot key under a software cap, because the facilitator refuses delegated payments; eligible held payments sign in the Speculos emulator.
+- The revocable Delegate covers direct Payments only.
+- The wallet listens on localhost only, and the policy file is operator-controlled.
+- Agent credit is small today; we built the broker to exercise the protocol.
+- No seed is committed; wallet test keys are derived at test time from fixed test entropy.
 
 ## Run it locally
 
@@ -113,23 +141,7 @@ Tests (offline): `cd wallet && npm ci && npm test`, `cd lending && .venv/bin/pyt
 - `ons/experiments/001-vault-loan-baseline/`, `010-iou-vault/`: earlier lending experiments.
 - `ons/branding/`: the Within logo, brand strings and design tokens.
 - `playground/`: a separate, flag-gated 'be the agent' demo on devnet (not part of the submission flow).
-- `docs/`: runbook, architecture, policy contract, findings, and `docs/video/` for the walkthrough once one is selected.
-
-## Honest limits
-
-- Every device signature came from the Speculos emulator, not hardware. No physical device signed anything.
-- The wallet runs on testnet and the desk on devnet, so the loop is stitched across two networks. Loans are in XRP.
-- The broker counter-signature uses a software key.
-- The score uses public ledger history plus the borrower's own declared outside debt; no bank or credit-bureau data.
-- Devnet income is simulated: script-sent, memo-tagged Payments, shown as evidence, not a score weight.
-- Under-cap x402 payments run on the hot key under a software cap, because the facilitator refuses delegated payments; the held one signs in the Speculos emulator after the tap.
-- The revocable Delegate covers direct Payments only.
-- The wallet listens on localhost only, and the policy file is operator-controlled until a device-signed pin lands.
-- Agent credit is small today; we built the broker to exercise the protocol.
-- The code was written by AI agents under human direction and review; automation drove the emulator taps.
-- An x402 client and Ledger DMK signing on the emulator were proven in separate spikes before the event and reused, not claimed.
-- This repository is a curated export; the original build history starts at 02:24 EDT on 24 October 2026, before the doors opened.
-- No seed is committed; wallet test keys are derived at test time from fixed test entropy.
+- `docs/`: the [documentation index](docs/README.md), runbook, architecture, policy contract, application-preview format and findings.
 
 ## Built for upstream
 
@@ -137,4 +149,4 @@ The XRP app patch is open as draft PR [#97](https://github.com/LedgerHQ/app-xrp/
 
 ## Team
 
-Malik Salim and Ons Ali.
+Team Axesec: Malik Salim and Ons Ali.
