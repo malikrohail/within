@@ -16,7 +16,7 @@ Within has two components, the Policy Wallet and the Lending Desk, joined by one
 
 - **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Eligible payments up to 0.1 XRP sign on a hot key, eligible larger ones wait for an approval in the Speculos emulator, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
 - **The approval path that joins them**: large payments and large loans are approved in the Speculos emulator running the Ledger XRP app. No physical device signed anything.
-- **Lending Desk** (devnet): the off-chain underwriter that the Lending Protocol (XLS-66) leaves for someone to build. Automatic loans need a broker-issued Credential and a sufficient score from ledger history; eligible larger loans are held for approval, and the desk and pays suppliers in one all-or-nothing Batch.
+- **Lending Desk** (devnet): the off-chain underwriter that the Lending Protocol (XLS-66) leaves for someone to build. Automatic loans need a broker-issued Credential and a sufficient score from ledger history; eligible larger loans are held for approval, and the desk pays suppliers in one all-or-nothing Batch.
 
 ## Verify it yourself in sixty seconds
 
