@@ -12,7 +12,7 @@ Within was built for the AI & Fintech XRPL Hackathon in New York, October 24–2
 
 Start with the public receipt check below. Component setup, recorded transactions and technical findings follow.
 
-Demo video: A 50-second walkthrough is in [docs/video/](docs/video/).
+Demo video: pending selection and upload.
 
 ## What it does
 
@@ -113,7 +113,7 @@ Tests (offline): `cd wallet && npm ci && npm test`, `cd lending && .venv/bin/pyt
 - `ons/experiments/001-vault-loan-baseline/`, `010-iou-vault/`: earlier lending experiments.
 - `ons/branding/`: the Within logo, brand strings and design tokens.
 - `playground/`: a separate, flag-gated 'be the agent' demo on devnet (not part of the submission flow).
-- `docs/`: runbook, architecture, policy contract, findings, and `docs/video/` for the walkthrough.
+- `docs/`: runbook, architecture, policy contract, findings, and `docs/video/` for the walkthrough once one is selected.
 
 ## Honest limits
 
