@@ -19,7 +19,7 @@ Demo video: A 50-second walkthrough is in [docs/video/](docs/video/).
 Within has two components, the Policy Wallet and the Lending Desk, joined by one approval path:
 
 - **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Eligible payments up to 0.1 XRP sign on a hot key, eligible larger ones wait for an approval in the Speculos emulator, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
-- **The approval path that joins them**: large payments and large loans are approved in the Speculos emulator running the Ledger XRP app. No physical device signed anything.
+- **The approval path that joins them**: eligible larger payments and loan requests wait for approval in the Speculos emulator running the Ledger XRP app, and off-policy ones are refused. The recorded runs use scripted taps; no physical device signed anything.
 - **Lending Desk** (devnet): runs a loan broker on the XRPL Lending Protocol (XLS-66) over a Single Asset Vault (XLS-65). Automatic approval requires a broker-issued Credential and a sufficient ledger-history score; eligible larger loans wait for approval; suppliers are paid in one all-or-nothing Batch; repayments and a default drawing on the broker first-loss cover are recorded on devnet.
 
 ## Verify it yourself in sixty seconds
