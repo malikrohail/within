@@ -1,0 +1,10 @@
+{
+  "url": "https://s.devnet.rippletest.net:51234/",
+  "method": "tx",
+  "params": [
+    {
+      "transaction": "C9627B03199430510F43567C6A93A446116606AC4DA5FAE763BA8FAA6CDDDF13",
+      "binary": false
+    }
+  ]
+}

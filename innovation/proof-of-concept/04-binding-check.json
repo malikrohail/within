@@ -1,0 +1,31 @@
+{
+  "approvalPayment": {
+    "hash": "8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C",
+    "network": "testnet",
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Destination": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+    "Amount": "1",
+    "memo_loan_approval": "70C795FCADB20C0FE1EC53F722817476B2738853C7F448E3254C5205F616E646",
+    "memo_loan_terms": "approve loan 30 XRP to rBZQ4Z23RsLF3yZzWUAc5jfu1VHrYQUUYG 6 payments",
+    "has_Delegate": false
+  },
+  "loanSet": {
+    "hash": "C9627B03199430510F43567C6A93A446116606AC4DA5FAE763BA8FAA6CDDDF13",
+    "network": "devnet",
+    "Account": "rBZQ4Z23RsLF3yZzWUAc5jfu1VHrYQUUYG",
+    "Counterparty": "rEH59tesggzmgg42PeHvByQQ3kmUNhegVw",
+    "PrincipalRequested": "30000000",
+    "PaymentTotal": 6,
+    "has_CounterpartySignature": true
+  },
+  "rebuilt_borrower_signed_blob_sha256": "70C795FCADB20C0FE1EC53F722817476B2738853C7F448E3254C5205F616E646",
+  "memo_equals_rebuilt_blob_sha256": true,
+  "derived_terms": "approve loan 30 XRP to rBZQ4Z23RsLF3yZzWUAc5jfu1VHrYQUUYG 6 payments",
+  "memo_terms_equal_derived": true,
+  "batch": {
+    "hash": "6C506E2B9E7B6027C9BBC80E6A75480A1DF2382346567F0BD98E60A540A29DDB",
+    "Flags_hex": "0x10000",
+    "inner_count": 2,
+    "result": "tesSUCCESS"
+  }
+}

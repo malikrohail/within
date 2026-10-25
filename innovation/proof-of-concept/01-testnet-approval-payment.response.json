@@ -1,0 +1,80 @@
+{
+  "result": {
+    "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+    "Amount": "1",
+    "DeliverMax": "1",
+    "Destination": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+    "Fee": "12",
+    "Flags": 0,
+    "LastLedgerSequence": 21797409,
+    "Memos": [
+      {
+        "Memo": {
+          "MemoData": "70C795FCADB20C0FE1EC53F722817476B2738853C7F448E3254C5205F616E646",
+          "MemoType": "6C6F616E2D617070726F76616C"
+        }
+      },
+      {
+        "Memo": {
+          "MemoData": "617070726F7665206C6F616E2033302058525020746F2072425A51345A323352734C4633795A7A57554163356A6675315648725951555559472036207061796D656E7473",
+          "MemoType": "6C6F616E2D7465726D73"
+        }
+      }
+    ],
+    "Sequence": 21779658,
+    "SigningPubKey": "0250B6474EA8B26A489AB33E256EA546B94FF951C107CCF6C4E7BB31397BF93FF3",
+    "TransactionType": "Payment",
+    "TxnSignature": "3044022048D7A473935777853D435DA5EA9DF9E59EB819509CED53AE2B5EDF597C74846A02205672E2A02816A544621D86997B418E322FABE075AB5E1471FD2D049AE051EB77",
+    "ctid": "C14C99FD00010001",
+    "date": 846194861,
+    "hash": "8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C",
+    "inLedger": 21797373,
+    "ledger_index": 21797373,
+    "meta": {
+      "AffectedNodes": [
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rUGeRsKjpnDVAi1uJYhAxWXbETC917VQ6B",
+              "Balance": "232197686",
+              "Flags": 0,
+              "OwnerCount": 1,
+              "Sequence": 21779659
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "3B305864655D9BBBEE475492744769E729DAA91D07AAB280A653E9275CA489C2",
+            "PreviousFields": {
+              "Balance": "232197699",
+              "Sequence": 21779658
+            },
+            "PreviousTxnID": "9E6B0BAF81172AB47B97ABCE21E3AF2C2FD32CAF2621A32043FC8384616892FC",
+            "PreviousTxnLgrSeq": 21793715
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rUPNkALm4H4xefrVziYPxPARi1t6knrm7m",
+              "Balance": "299111272",
+              "Flags": 0,
+              "OwnerCount": 1,
+              "Sequence": 21780499
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "A2AAA2C50F2B96C0E361BFDAFCC8981FA81555D3B45CBDB31C37D86ED572E465",
+            "PreviousFields": {
+              "Balance": "299111271"
+            },
+            "PreviousTxnID": "9E6B0BAF81172AB47B97ABCE21E3AF2C2FD32CAF2621A32043FC8384616892FC",
+            "PreviousTxnLgrSeq": 21793715
+          }
+        }
+      ],
+      "TransactionIndex": 1,
+      "TransactionResult": "tesSUCCESS",
+      "delivered_amount": "1"
+    },
+    "status": "success",
+    "validated": true
+  }
+}

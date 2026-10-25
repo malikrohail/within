@@ -1,0 +1,10 @@
+{
+  "url": "https://s.altnet.rippletest.net:51234/",
+  "method": "tx",
+  "params": [
+    {
+      "transaction": "8AC151230EAF1AC6F9928CF3E5A5F25DF2DE6AC2454C76DD6136466987B7919C",
+      "binary": false
+    }
+  ]
+}
