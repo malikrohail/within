@@ -14,7 +14,7 @@ Demo video: A 50-second walkthrough is in [docs/video/](docs/video/).
 
 Within has two components, the Policy Wallet and the Lending Desk, joined by one approval path:
 
-- **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Small payments sign on a hot key under a 0.1 XRP cap, larger ones wait for an approval, and a merchant that is not on the on-ledger allowlist is refused before anything reaches the ledger.
+- **Policy Wallet** (testnet): the agent pays for APIs over x402 (HTTP 402 pay-per-call). Six policy rules run before the wallet signs. Small payments sign on a hot key under a 0.1 XRP cap, larger ones wait for an approval, and a merchant that is on neither the Credential allowlist nor the static override list is refused before anything reaches the ledger.
 - **The approval path that joins them**: large payments and large loans are approved in the Speculos emulator running the Ledger XRP app. No physical device signed anything.
 - **Lending Desk** (devnet): the off-chain underwriter that the Lending Protocol (XLS-66) leaves for someone to build. It gates on a Credential, scores the borrower from ledger history, lends small amounts automatically, holds large ones for approval, and pays suppliers in one all-or-nothing Batch.
 
@@ -49,7 +49,7 @@ flowchart LR
   V -.reads.-> L
 ```
 
-The wallet's guardrails are ledger objects, not server settings. The merchant allowlist is a Credential inside a Permissioned Domain. The agent's spending right is a DelegateSet that the treasury can grant and revoke; after a revoke, a delegated Payment returns `terNO_DELEGATE_PERMISSION`. Policy rules and their order: [docs/CONTRACT.md](docs/CONTRACT.md). Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Two of the wallet's guardrails are ledger objects: the Credential allowlist and the revocable Delegate. The cap, budget, network and asset checks are policy settings. The merchant allowlist is a Credential inside a Permissioned Domain, plus a static override list. The agent's spending right is a DelegateSet that the treasury can grant and revoke; after a revoke, a delegated Payment returns `terNO_DELEGATE_PERMISSION`. Policy rules and their order: [docs/CONTRACT.md](docs/CONTRACT.md). Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 The stock XRP app 2.8.1 rejects a LoanSet (`0x680b`, no reader for the Number type). Our patch adds the lending fields: a Number reader and the field labels. The app's own test suite in Speculos gave 142 passed, 11 skipped, 0 failed, and the patched app signed a LoanSet and a LoanPay as the borrower that validated on devnet. The patch does not add the counterparty signing prefix, so the broker still signs in software. See [experiment 005](ons/experiments/005-app-xrp-patch/) and [experiment 011](ons/experiments/011-speculos-loanset-devnet/).
 
@@ -118,7 +118,7 @@ Tests (offline): `cd wallet && npm ci && npm test`, `cd lending && .venv/bin/pyt
 - The broker counter-signature uses a software key.
 - The score uses public ledger history plus the borrower's own declared outside debt; no bank or credit-bureau data.
 - Devnet income is simulated: script-sent, memo-tagged Payments, shown as evidence, not a score weight.
-- x402 payments run on the hot key under a software cap, because the facilitator refuses delegated payments.
+- Under-cap x402 payments run on the hot key under a software cap, because the facilitator refuses delegated payments; the held one signs in the Speculos emulator after the tap.
 - The revocable Delegate covers direct Payments only.
 - The wallet listens on localhost only, and the policy file is operator-controlled until a device-signed pin lands.
 - Agent credit is small today; we built the broker to exercise the protocol.
